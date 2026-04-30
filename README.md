@@ -1,6 +1,6 @@
 # People Counting with YOLOv8n
 
-<img width="1536" height="1024" alt="image" src="https://github.com/user-attachments/assets/17696da1-6324-491d-bf0c-f6214e002c3a" />
+<img width="1072" height="718" alt="Untitled drawing" src="https://github.com/user-attachments/assets/1d56fe4f-58f5-4f5e-a11a-33e07ffa5fe5" />
 
 Reference: 
 
