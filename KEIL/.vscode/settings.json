@@ -1,0 +1,6 @@
+{
+    "clangd.arguments": [
+        "--compile-commands-dir=c:\\Users\\bence\\Edge-AI-People-Counting-NuMaker-X-M55M1D\\KEIL\\out\\PeopleCounting\\ObjectDetection"
+    ],
+    "debug.hideSlowPreLaunchWarning": true
+}
