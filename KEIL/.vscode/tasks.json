@@ -4,12 +4,9 @@
         {
             "label": "CMSIS Build",
             "type": "shell",
-            "command": "cbuild PeopleCounting.csolution.yml --context-set --packs",
+            "command": "cbuild PeopleCounting.csolution.yml --context-set --packs --cmake-options=\"-DCPP_DUMP_MACROS=-dM -E --target=arm-arm-none-eabi -mcpu=Cortex-M55 -xc \\\"${workspaceFolder}/../board_config.h\\\"\"",
             "options": {
-                "cwd": "${workspaceFolder}/",
-                "env": {
-                    "CMSIS_COMPILER_ROOT": "${workspaceFolder}/etc"
-                }
+                "cwd": "${workspaceFolder}/"
             },
             "windows": {
                 "options": {
