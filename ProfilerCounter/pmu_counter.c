@@ -32,7 +32,7 @@
 
 #include "NuMicro.h"
 
-//#define HAS_FREERTOS
+#define HAS_FREERTOS
 #define CPU_PROFILE_ENABLED
 
 static uint64_t s_u64CPUCycleCount = 0;    /* 64-bit cpu cycle counter */
