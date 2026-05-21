@@ -45,6 +45,8 @@
 #define LWIP_NETCONN                    1
 #define LWIP_SOCKET                     1
 #define LWIP_STATS                      0
+#define LWIP_TIMERS                     1
+#define LWIP_TIMERS_CUSTOM              0
 
 /* Protocol options */
 #define LWIP_ETHERNET                   1
