@@ -59,7 +59,7 @@
 #endif
 
 #ifndef HEAP_SIZE
-#define HEAP_SIZE  0x10000
+#define HEAP_SIZE  0x4000
 #endif
 
 #define ITCM_START      0x00000000
@@ -163,7 +163,6 @@ APP_IMAGE FLASH_START FLASH_SIZE
     {
         .ANY (.bss.sram.data)
         .ANY1 (.bss.NoInit.activation_buf_sram)
-        .ANY (+RW +ZI)
     }
     ; Check size overflow here and ImageLength is uncompressed size
     ScatterAssert((ImageLength(SRAM_NONCACHEABLE) + ImageLength(SRAM01_HYPERRAM)) < (SRAM01_ALIASE_SIZE + SPIM0_SIZE))
