@@ -6,6 +6,8 @@
  * @copyright SPDX-License-Identifier: Apache-2.0
  ******************************************************************************/
 #include <cstdio>
+// Avoid ISO C++17 'register' storage class specifier errors in old Nuvoton SDK headers
+#define register
 #include "NuMicro.h"
 #include "log_macros.h"
 

@@ -33,6 +33,11 @@ project:
         - ..
         - $TP_PATH$/tflite_micro/_deps/tensorflow-gemlowp-src
         - $TP_PATH$/FatFs/source
+        - $TP_PATH$/FreeRTOS/Source/include
+        - $TP_PATH$/FreeRTOS/Source/portable/GCC/ARM_CM55/non_secure
+        - $TP_PATH$/lwip/src/include
+        - $TP_PATH$/lwip/contrib/ports/freertos/include
+        - $TP_PATH$/lwip/src/include/compat
       debug: "on"
       define:
         - NVT_VECTOR_ON_FLASH
@@ -105,6 +110,7 @@ project:
         - file: $BSP_PATH$/StdDriver/src/spi.c
         - file: $BSP_PATH$/StdDriver/src/hsusbd.c
         - file: $BSP_PATH$/StdDriver/src/pdma.c
+        - file: $BSP_PATH$/StdDriver/src/emac.c
     - group: Application
       files:
         - file: ../BoardInit.cpp
@@ -160,3 +166,51 @@ project:
         - file: ../Pattern/car.cpp
         - file: ../Pattern/dinner.cpp
         - file: ../Pattern/InputFiles.cpp
+    - group: FreeRTOS
+      files:
+        - file: $TP_PATH$/FreeRTOS/Source/tasks.c
+        - file: $TP_PATH$/FreeRTOS/Source/queue.c
+        - file: $TP_PATH$/FreeRTOS/Source/list.c
+        - file: $TP_PATH$/FreeRTOS/Source/timers.c
+        - file: $TP_PATH$/FreeRTOS/Source/event_groups.c
+        - file: $TP_PATH$/FreeRTOS/Source/portable/GCC/ARM_CM55/non_secure/port.c
+        - file: $TP_PATH$/FreeRTOS/Source/portable/GCC/ARM_CM55/non_secure/portasm.c
+        - file: $TP_PATH$/FreeRTOS/Source/portable/MemMang/heap_4.c
+    - group: LwIP
+      files:
+        - file: $TP_PATH$/lwip/src/core/init.c
+        - file: $TP_PATH$/lwip/src/core/def.c
+        - file: $TP_PATH$/lwip/src/core/dns.c
+        - file: $TP_PATH$/lwip/src/core/inet_chksum.c
+        - file: $TP_PATH$/lwip/src/core/ip.c
+        - file: $TP_PATH$/lwip/src/core/mem.c
+        - file: $TP_PATH$/lwip/src/core/memp.c
+        - file: $TP_PATH$/lwip/src/core/netif.c
+        - file: $TP_PATH$/lwip/src/core/pbuf.c
+        - file: $TP_PATH$/lwip/src/core/raw.c
+        - file: $TP_PATH$/lwip/src/core/stats.c
+        - file: $TP_PATH$/lwip/src/core/sys.c
+        - file: $TP_PATH$/lwip/src/core/tcp.c
+        - file: $TP_PATH$/lwip/src/core/tcp_in.c
+        - file: $TP_PATH$/lwip/src/core/tcp_out.c
+        - file: $TP_PATH$/lwip/src/core/timeouts.c
+        - file: $TP_PATH$/lwip/src/core/udp.c
+        - file: $TP_PATH$/lwip/src/core/ipv4/autoip.c
+        - file: $TP_PATH$/lwip/src/core/ipv4/dhcp.c
+        - file: $TP_PATH$/lwip/src/core/ipv4/etharp.c
+        - file: $TP_PATH$/lwip/src/core/ipv4/icmp.c
+        - file: $TP_PATH$/lwip/src/core/ipv4/igmp.c
+        - file: $TP_PATH$/lwip/src/core/ipv4/ip4.c
+        - file: $TP_PATH$/lwip/src/core/ipv4/ip4_addr.c
+        - file: $TP_PATH$/lwip/src/core/ipv4/ip4_frag.c
+        - file: $TP_PATH$/lwip/src/api/api_lib.c
+        - file: $TP_PATH$/lwip/src/api/api_msg.c
+        - file: $TP_PATH$/lwip/src/api/err.c
+        - file: $TP_PATH$/lwip/src/api/if_api.c
+        - file: $TP_PATH$/lwip/src/api/netbuf.c
+        - file: $TP_PATH$/lwip/src/api/netdb.c
+        - file: $TP_PATH$/lwip/src/api/netifapi.c
+        - file: $TP_PATH$/lwip/src/api/sockets.c
+        - file: $TP_PATH$/lwip/src/api/tcpip.c
+        - file: $TP_PATH$/lwip/contrib/ports/freertos/sys_arch.c
+        - file: $TP_PATH$/lwip/contrib/ports/freertos/netif/ethernetif.c

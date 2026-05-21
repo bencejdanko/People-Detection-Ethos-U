@@ -5,6 +5,8 @@
  *
  * @copyright SPDX-License-Identifier: Apache-2.0
  ******************************************************************************/
+// Avoid ISO C++17 'register' storage class specifier errors in old Nuvoton SDK headers
+#define register
 #include <cstdio>
 #include <vector>
 #include <cmath>
