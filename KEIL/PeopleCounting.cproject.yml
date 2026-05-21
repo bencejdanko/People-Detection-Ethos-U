@@ -217,6 +217,7 @@ project:
         - file: $TP_PATH$/lwIP/src/api/netifapi.c
         - file: $TP_PATH$/lwIP/src/api/sockets.c
         - file: $TP_PATH$/lwIP/src/api/tcpip.c
+        - file: $TP_PATH$/lwIP/src/netif/ethernet.c
         - file: ../Device/lwip_port/sys_arch.c
         - file: ../Device/lwip_port/netif/ethernetif.c
         - file: ../Device/lwip_port/drv_emac/emac.c

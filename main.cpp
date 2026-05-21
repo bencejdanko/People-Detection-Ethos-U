@@ -18,17 +18,30 @@
 #include "semphr.h"
 
 /* LwIP network includes */
+extern "C" {
 #include "lwip/netifapi.h"
 #include "lwip/tcpip.h"
 #include "netif/ethernetif.h"
 #include "lwip/api.h"
 #include "lwip/def.h"
+}
 
 /* Board and BSP includes */
 #include "NuMicro.h"
 #include "BoardInit.hpp"
 #include "board_config.h"
 #include "pmu_counter.h"
+
+/* Global variables and TrustZone stub symbols for non-secure FreeRTOS */
+extern "C" {
+    uint8_t my_mac_addr[6] = DEFAULT_MAC0_ADDRESS;
+
+    // FreeRTOS portasm.c unconditionally references these symbols for TrustZone stack context allocation,
+    // but they are unused when configENABLE_TRUSTZONE is 0. We define dummies to satisfy the linker.
+    void *xSecureContext = NULL;
+    void SecureContext_SaveContext(void *xSecureContext, void *pxCurrentTCB) {}
+    void SecureContext_LoadContext(void *xSecureContext, void *pxCurrentTCB) {}
+}
 
 /* Image Processing and OpenMV includes */
 #include "imlib.h"
