@@ -3,8 +3,8 @@ solution:
   created-for: CMSIS-Toolbox@2.7.0
   compiler: AC6
   variables:
-    - BSP_PATH: "C:/Library"
-    - TP_PATH: "C:/ThirdParty"
+    - BSP_PATH: "C:/M55M1BSP/Library"
+    - TP_PATH: "C:/M55M1BSP/ThirdParty"
   target-types:
     - type: ObjectDetection
       device: M55M1H2LJAE

@@ -25,25 +25,34 @@ graph TD
 
 ## Installation
 
-Use the installation script of essential libraries from the official developer [repository](https://github.com/OpenNuvoton/ML_M55M1_SampleCode).
+To compile this project, you need the official Nuvoton M55M1 Board Support Package (BSP) containing the complete and untrimmed `Library` and `ThirdParty` dependencies (~1GB disk space).
 
-You will need `Library` and `ThirdParty` paths available at an accessible location, such as `C:/Library` and `C:/ThirdParty` (~600MB disk space required).
+1. Clone the Official Nuvoton M55M1 BSP Repository:
+   Clone the repository to an accessible location on your machine (e.g., `C:\M55M1BSP`):
+   ```cmd
+   git clone https://github.com/OpenNuvoton/M55M1BSP.git C:\M55M1BSP
+   ```
 
-[Download pre-trained weights (APGL 3.0)](https://huggingface.co/bdanko/fomo-overhead-people-counting/resolve/main/model_192x192_ethos_u55_int8.tflite?download=true).  
+2. Configure the Project Paths:
+   Use the `configure_paths.py` utility to dynamically map your project files to the newly cloned BSP directories:
+   ```bash
+   python3 configure_paths.py --library "C:\M55M1BSP\Library" --thirdparty "C:\M55M1BSP\ThirdParty"
+   ```
 
-Please place the model file at the root of the repository as `model.tflite`.
+3. Prepare Model Weights:
+   Download the pre-trained FOMO model weights:
+   * [Download pre-trained weights (APGL 3.0)](https://huggingface.co/bdanko/fomo-overhead-people-counting/resolve/main/model_192x192_ethos_u55_int8.tflite?download=true)
+   
+   Place the downloaded `.tflite` file at the root of this repository and rename it to `model.tflite`.
 
-Install the [Arm CMSIS Solution](https://marketplace.visualstudio.com/items?itemName=Arm.cmsis-csolution) on VSCode. Open the KEIL project.
+4. Build and Flash:
+   Install the [Arm CMSIS Solution](https://marketplace.visualstudio.com/items?itemName=Arm.cmsis-csolution) extension in VS Code. Open the workspace, then clear the stale cache and compile:
 
-> [!TIP]
-> By default we assume that `C:/Library` and `C:/ThirdParty` are available.
-> If you placed these in a custom location, use the  `configure_paths.py` utility.
-> ```bash
-> python3 configure_paths.py --library "C:\Library" --thirdparty "C:\ThirdParty"
-> ```
-
-Open the `KEIL/` project, select the CMSIS tab, and build and flash the project.
-
+   In Windows PowerShell:
+   ```powershell
+   Remove-Item -Recurse -Force KEIL/tmp, KEIL/out
+   cbuild KEIL/PeopleCounting.csolution.yml --context-set --packs
+   ```
 
 ### Running the Streamer
 
