@@ -89,7 +89,7 @@ __attribute__((section(".bss.NoInit.activation_buf_sram"), aligned(32))) static 
 
 __attribute__((section(".bss.vram.data"), aligned(32))) static char fb_array[OMV_FB_SIZE + OMV_FB_ALLOC_SIZE];
 __attribute__((section(".bss.vram.data"), aligned(32))) static char jpeg_array[OMV_JPEG_BUF_SIZE];
-__attribute__((section(".bss.sram.data"), aligned(32))) static char frame_buf1[OMV_FB_SIZE];
+__attribute__((section(".bss.vram.data"), aligned(32))) static char frame_buf1[OMV_FB_SIZE];
 
 char *_fb_base = NULL;
 char *_fb_end = NULL;
