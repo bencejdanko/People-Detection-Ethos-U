@@ -35,6 +35,9 @@
 #define TCPIP_THREAD_PRIO               (tskIDLE_PRIORITY + 5UL)
 #define TCPIP_MBOX_SIZE                 8
 
+#define RX_THREAD_STACKSIZE             1024
+#define RX_THREAD_PRIO                  (tskIDLE_PRIORITY + 5UL)
+
 /* Internal memory pool sizes */
 #define DEFAULT_RAW_RECVMBOX_SIZE       8
 #define DEFAULT_UDP_RECVMBOX_SIZE       8

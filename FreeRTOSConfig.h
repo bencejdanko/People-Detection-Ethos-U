@@ -58,6 +58,7 @@
 /* Interrupt nesting behaviour configuration. */
 #define configKERNEL_INTERRUPT_PRIORITY         (7 << 5)    /* Priority 7 (lowest) */
 #define configMAX_SYSCALL_INTERRUPT_PRIORITY    (3 << 5)    /* Priority 3 */
+#define configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY    3
 
 /* Define to map the FreeRTOS port interrupt handlers to their CMSIS standard names. */
 #define vPortSVCHandler                         SVC_Handler
