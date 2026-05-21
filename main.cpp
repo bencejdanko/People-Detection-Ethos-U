@@ -56,14 +56,14 @@ struct netif g_netif;
 
 /* --- DOUBLE BUFFER MEMORY ALLOCATION --- */
 // networkFrameBuffer is written to by UDP Receiver task
-__attribute__((section(".bss.vram.data"), aligned(32))) static uint8_t g_networkFrameBuffer[FRAME_BUFFER_SIZE];
+__attribute__((section(".bss.sram.data"), aligned(32))) static uint8_t g_networkFrameBuffer[FRAME_BUFFER_SIZE];
 // inferenceFrameBuffer is read by ML Inference task
-__attribute__((section(".bss.vram.data"), aligned(32))) static uint8_t g_inferenceFrameBuffer[FRAME_BUFFER_SIZE];
+__attribute__((section(".bss.sram.data"), aligned(32))) static uint8_t g_inferenceFrameBuffer[FRAME_BUFFER_SIZE];
 
-/* Tensor arena buffer for TensorFlow Lite Micro placed in VRAM */
+/* Tensor arena buffer for TensorFlow Lite Micro placed in SRAM01_HYPERRAM */
 namespace arm {
 namespace app {
-__attribute__((section(".bss.vram.data"), aligned(32))) static uint8_t tensorArena[ACTIVATION_BUF_SZ];
+__attribute__((section(".bss.NoInit.activation_buf_sram"), aligned(32))) static uint8_t tensorArena[ACTIVATION_BUF_SZ];
 }
 }
 
