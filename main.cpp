@@ -294,7 +294,7 @@ static void vInferenceTask(void *pvParameters)
     srcImg.w = IMAGE_WIDTH;
     srcImg.h = IMAGE_HEIGHT;
     srcImg.size = FRAME_BUFFER_SIZE;
-    srcImg.pixfmt = PIXFORMAT_GRAYSCALE;
+    srcImg.pixfmt = (IMAGE_CHANNELS == 3) ? PIXFORMAT_RGB888 : PIXFORMAT_GRAYSCALE;
     
     image_t dstImg;
     dstImg.w = 320;

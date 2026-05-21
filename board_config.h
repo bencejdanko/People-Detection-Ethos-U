@@ -52,7 +52,7 @@
 /* Image size matching model input size */
 #define IMAGE_WIDTH                192
 #define IMAGE_HEIGHT               192
-#define IMAGE_CHANNELS             1            // Grayscale (for ultra-high performance)
+#define IMAGE_CHANNELS             3            // RGB (for full RGB implementation)
 #define FRAME_BUFFER_SIZE          (IMAGE_WIDTH * IMAGE_HEIGHT * IMAGE_CHANNELS)
 
 /* --- MODEL INFERENCE CONFIGURATION --- */

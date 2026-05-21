@@ -20,9 +20,8 @@ MAGIC_HEADER = b"FRME"  # 0x46524D45 in ASCII
 CHUNK_SIZE = 1024      # Size of the payload chunk in bytes
 IMAGE_W = 192
 IMAGE_H = 192
-FRAME_SIZE = IMAGE_W * IMAGE_H  # 36,864 bytes for raw 192x192 grayscale
 
-def stream_video(target_ip, target_port, source, fps):
+def stream_video(target_ip, target_port, source, fps, channels=3):
     # Create UDP socket
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     
@@ -35,8 +34,10 @@ def stream_video(target_ip, target_port, source, fps):
         print(f"[-] Error: Could not open video source: {source}")
         return
 
+    frame_size = IMAGE_W * IMAGE_H * channels
+    mode_str = "RGB" if channels == 3 else "Grayscale"
     print(f"[+] Starting video stream to {target_ip}:{target_port}...")
-    print(f"[+] Capture resolution: {IMAGE_W}x{IMAGE_H} (Grayscale)")
+    print(f"[+] Capture resolution: {IMAGE_W}x{IMAGE_H} ({mode_str})")
     print(f"[+] Target Frame Rate: {fps} FPS")
     print("[+] Press 'q' in the OpenCV window to exit.")
 
@@ -59,15 +60,20 @@ def stream_video(target_ip, target_port, source, fps):
             # 1. Preprocess: Resize to 192x192
             resized = cv2.resize(frame, (IMAGE_W, IMAGE_H))
             
-            # 2. Convert to Grayscale
-            gray = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
+            # 2. Format conversion
+            if channels == 3:
+                # Convert BGR to RGB for model input
+                processed_img = cv2.cvtColor(resized, cv2.COLOR_BGR2RGB)
+            else:
+                # Convert BGR to Grayscale
+                processed_img = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
             
             # 3. Get raw byte array
-            raw_bytes = gray.tobytes()
-            assert len(raw_bytes) == FRAME_SIZE, f"Invalid frame size: {len(raw_bytes)}"
+            raw_bytes = processed_img.tobytes()
+            assert len(raw_bytes) == frame_size, f"Invalid frame size: {len(raw_bytes)} (expected {frame_size})"
 
             # 4. Stream frame in chunks
-            num_chunks = (FRAME_SIZE + CHUNK_SIZE - 1) // CHUNK_SIZE
+            num_chunks = (frame_size + CHUNK_SIZE - 1) // CHUNK_SIZE
             
             for i in range(num_chunks):
                 offset = i * CHUNK_SIZE
@@ -80,7 +86,7 @@ def stream_video(target_ip, target_port, source, fps):
                     "!4sIIII",
                     MAGIC_HEADER,
                     frame_id,
-                    FRAME_SIZE,
+                    frame_size,
                     offset,
                     chunk_len
                 )
@@ -90,8 +96,9 @@ def stream_video(target_ip, target_port, source, fps):
             
             frame_id += 1
             
-            # Local visualization
-            cv2.imshow("Streaming to M55M1 (Grayscale Feed)", gray)
+            # Local visualization (display in standard BGR for OpenCV window)
+            display_img = resized if channels == 3 else processed_img
+            cv2.imshow(f"Streaming to M55M1 ({mode_str} Feed)", display_img)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
                 
@@ -114,6 +121,7 @@ if __name__ == "__main__":
     parser.add_argument("--port", type=int, default=5005, help="Target UDP port")
     parser.add_argument("--source", type=str, default="0", help="Webcam ID (e.g. '0') or path to video file")
     parser.add_argument("--fps", type=int, default=15, help="Frames per second to stream")
+    parser.add_argument("--channels", type=int, default=3, choices=[1, 3], help="Number of image channels: 1 (Grayscale), 3 (RGB)")
     
     args = parser.parse_args()
-    stream_video(args.ip, args.port, args.source, args.fps)
+    stream_video(args.ip, args.port, args.source, args.fps, args.channels)
