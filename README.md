@@ -29,50 +29,24 @@ Use the installation script of essential libraries from the official developer [
 
 You will need `Library` and `ThirdParty` paths available at an accessible location, such as `C:/Library` and `C:/ThirdParty` (~600MB disk space required).
 
----
-
-## Model Setup
-
 [Download pre-trained weights (APGL 3.0)](https://huggingface.co/bdanko/fomo-overhead-people-counting/resolve/main/model_192x192_ethos_u55_int8.tflite?download=true).  
 
 Please place the model file at the root of the repository as `model.tflite`.
 
-### Model Parameters
-* Input Tensor: `[1, 192, 192, 1]` (int8 quantized)
-* Output Tensor: `[1, 24, 24, 2]` (int8 quantized, Class 0: Background, Class 1: Person)
+Install the [Arm CMSIS Solution](https://marketplace.visualstudio.com/items?itemName=Arm.cmsis-csolution) on VSCode. Open the KEIL project.
 
-### Memory Mapping (M55M1.scatter)
-* Model ROM location: Copied from the SD Card (`0:\model.tflite`) directly into high-speed HyperRAM at address `0x82400000` during initialization to conserve internal SRAM.
-* Tensor Arena (Activation Buffer): `0x00100000` (1 MB) allocated in internal high-speed SRAM with Cache policy set to Write-Through, Read-Allocate (WTRA).
-* Frame Buffers: Double buffered `g_networkFrameBuffer` and `g_inferenceFrameBuffer` (36.8 KB each) placed in SRAM2 (`.bss.vram.data` region) to support uncached, zero-copy, race-free transfers.
+> [!TIP]
+> By default we assume that `C:/Library` and `C:/ThirdParty` are available.
+> If you placed these in a custom location, use the  `configure_paths.py` utility.
+> ```bash
+> python3 configure_paths.py --library "C:\Library" --thirdparty "C:\ThirdParty"
+> ```
 
----
+Open the `KEIL/` project, select the CMSIS tab, and build and flash the project.
 
-## VS Code & CMSIS Path Configuration
-
-If you are using the Arm CMSIS VS Code Extension (which autodetects Keil `.uvprojx` projects and builds/runs them natively in VS Code), you must configure the include and link paths to match your local installation of the Nuvoton SDK (`Library` and `ThirdParty` folders).
-
-Use the path configuration utility `configure_paths.py` in the root of the repository before opening the project in VS Code:
-
-```bash
-python3 configure_paths.py --library "C:\Library" --thirdparty "C:\ThirdParty"
-```
-
-Once configured, open this repository folder inside VS Code. The Arm CMSIS Extension will automatically detect the project, configure its internal build configurations, and let you compile and flash the firmware natively.
-
----
-
-## Host Video Streaming Pipeline (stream_udp.py)
-
-To achieve maximum performance and zero decompression overhead on the Cortex-M55 core, the PC streams raw, 1-channel grayscale bytes (`192x192 = 36,864` bytes). This avoids hardware JPEG decoding stalls and completely bypasses software decoding overhead.
-
-### Installation of Host Dependencies
-Ensure you have `opencv-python` installed:
-```bash
-pip install opencv-python
-```
 
 ### Running the Streamer
+
 Stream a live feed from the default webcam (`0`):
 ```bash
 python3 stream_udp.py --ip 192.168.1.10 --port 5005 --source 0 --fps 15

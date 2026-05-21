@@ -6,13 +6,6 @@ Host PC UDP Video Streamer for NuMaker-X-M55M1D Edge AI People Counting
 This script captures video from a local webcam or file, processes it, and
 streams raw grayscale frames over the network to the M55M1 board using a robust,
 custom UDP chunking protocol.
-
-Design Decision: Raw Grayscale Streaming
----------------------------------------
-Instead of streaming JPEG which incurs CPU decompression overhead on the micro,
-we stream raw grayscale (192x192 = 36,864 bytes) divided into 36 chunks of 1024
-bytes. This is extremely lightweight, requires zero decompression cycles on the
-Cortex-M55, and is highly robust against packet drops.
 ================================================================================
 """
 
