@@ -1,25 +1,6 @@
 # Edge AI Overhead People Counting with the NuMaker-X-M55M1D
 
-This repository contains highly optimized firmware for the Nuvoton NuMaker-X-M55M1D evaluation board to execute a custom overhead people counting model. The system uses hardware acceleration on the Arm Ethos-U55 NPU and processes video streams received over the network via a UDP server.
-
-This project is optimized for both Keil MDK and the Arm CMSIS / csolution VS Code Extensions, allowing direct compilation, flashing, and debugging inside VS Code.
-
----
-
-## System Architecture Overview
-
-```mermaid
-graph TD
-    HostPC[Host PC: Webcam / Video Feed] -- raw grayscale bytes via UDP --> EMAC[Ethernet MAC RMII]
-    EMAC -- LwIP Netconn Thread --> RxTask[vUdpVideoReceiverTask]
-    RxTask -- Frame Reassembly --> FrameQueue[g_inferenceFrameBuffer]
-    FrameQueue -- Task Notification --> MLTask[vInferenceTask]
-    MLTask -- Quantization / In-place Subtraction --> ModelInput[Tensor Arena Input]
-    ModelInput -- RunInference --> NPU[Arm Ethos-U55 NPU]
-    NPU -- Raw 24x24 Heatmaps --> PostProc[C++ PostProcessor]
-    PostProc -- Grid-space NMS --> Detections[Final Peak Coordinates]
-    Detections -- Render & Scale --> LCD[EBI LCD Panel / Serial Logs]
-```
+[Board user manual](https://www.nuvoton.com/export/resource-files/en-us--UM_NuMaker-X-M55M1D_EN_Rev1.01.pdf)
 
 ---
 
