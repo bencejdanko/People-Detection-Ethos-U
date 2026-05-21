@@ -46,12 +46,11 @@ To compile this project, you need the official Nuvoton M55M1 Board Support Packa
    Place the downloaded `.tflite` file at the root of this repository and rename it to `model.tflite`.
 
 4. Build and Flash:
-   Install the [Arm CMSIS Solution](https://marketplace.visualstudio.com/items?itemName=Arm.cmsis-csolution) extension in VS Code. Open the workspace, then clear the stale cache and compile:
+   Install the [Arm CMSIS Solution](https://marketplace.visualstudio.com/items?itemName=Arm.cmsis-csolution) extension in VS Code. Open the workspace, then clear the stale cache:
 
    In Windows PowerShell:
    ```powershell
    Remove-Item -Recurse -Force KEIL/tmp, KEIL/out
-   cbuild KEIL/PeopleCounting.csolution.yml --context-set --packs
    ```
 
 ### Running the Streamer

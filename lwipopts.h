@@ -70,4 +70,6 @@
 #define CHECKSUM_CHECK_UDP              1
 #define CHECKSUM_CHECK_TCP              1
 
+#undef SYS_TIMEOUT
+
 #endif /* LWIP_LWIPOPTS_H */
