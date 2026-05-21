@@ -28,6 +28,7 @@
 #include "NuMicro.h"
 #include "BoardInit.hpp"
 #include "board_config.h"
+#include "pmu_counter.h"
 
 /* Image Processing and OpenMV includes */
 #include "imlib.h"
@@ -59,14 +60,15 @@ __attribute__((section(".bss.vram.data"), aligned(32))) static uint8_t g_network
 // inferenceFrameBuffer is read by ML Inference task
 __attribute__((section(".bss.vram.data"), aligned(32))) static uint8_t g_inferenceFrameBuffer[FRAME_BUFFER_SIZE];
 
-/* Tensor arena buffer for TensorFlow Lite Micro */
+/* Tensor arena buffer for TensorFlow Lite Micro placed in VRAM */
 namespace arm {
 namespace app {
-static uint8_t tensorArena[ACTIVATION_BUF_SZ] ACTIVATION_BUF_ATTRIBUTE;
+__attribute__((section(".bss.vram.data"), aligned(32))) static uint8_t tensorArena[ACTIVATION_BUF_SZ];
 }
 }
 
 /* OpenMV Frame buffer memory allocations (re-used from YOLOv8n) */
+#undef OMV_FB_ALLOC_SIZE
 #define OMV_FB_ALLOC_SIZE        (1*1024)
 #define IMAGE_FB_SIZE            (320 * 240 * 2) // RGB565 320x240 for display
 #undef OMV_FB_SIZE
@@ -98,14 +100,6 @@ static void omv_init()
     fb_alloc_init0();
     framebuffer_init0();
     framebuffer_init_from_image(&frameBuffer);
-
-    // Set secondary display rendering buffer
-    s_asFramebuf[0].eState = eFRAMEBUF_EMPTY;
-    s_asFramebuf[0].frameImage.w = 320;
-    s_asFramebuf[0].frameImage.h = 240;
-    s_asFramebuf[0].frameImage.size = IMAGE_FB_SIZE;
-    s_asFramebuf[0].frameImage.pixfmt = PIXFORMAT_RGB565;
-    s_asFramebuf[0].frameImage.data = (uint8_t *)frame_buf1;
 }
 
 /* UDP Frame Protocol Structure */
@@ -493,7 +487,7 @@ void vApplicationMallocFailedHook(void)
 
 void vApplicationIdleHook(void) {}
 
-void vApplicationStackOverflowHook(xTaskHandle pxTask, char *pcTaskName)
+void vApplicationStackOverflowHook(TaskHandle_t pxTask, char *pcTaskName)
 {
     (void)pcTaskName;
     (void)pxTask;
