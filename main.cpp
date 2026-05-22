@@ -18,10 +18,10 @@
 
 /* LwIP network includes */
 extern "C" {
-#include "lwip/netifapi.h"
 #include "lwip/tcpip.h"
 #include "netif/ethernetif.h"
-#include "lwip/api.h"
+#include "lwip/udp.h"
+#include "lwip/pbuf.h"
 #include "lwip/def.h"
 #include "emac.h"
 }
@@ -57,17 +57,16 @@ extern "C" {
 #endif
 
 /* Task Handles */
-static TaskHandle_t xUdpReceiverTaskHandle = NULL;
 static TaskHandle_t xInferenceTaskHandle = NULL;
 
 /* Network interface structure */
 struct netif g_netif;
 
-/* --- DOUBLE BUFFER MEMORY ALLOCATION --- */
-// networkFrameBuffer is written to by UDP Receiver task
-__attribute__((section(".bss.hyperram.data"), aligned(32))) static uint8_t g_networkFrameBuffer[FRAME_BUFFER_SIZE];
-// inferenceFrameBuffer is read by ML Inference task
-__attribute__((section(".bss.hyperram.data"), aligned(32))) static uint8_t g_inferenceFrameBuffer[FRAME_BUFFER_SIZE];
+/* --- FRAME BUFFER MEMORY ALLOCATION --- */
+__attribute__((section(".bss.hyperram.data"), aligned(32))) static uint8_t g_udpFrameBuffers[3][FRAME_BUFFER_SIZE];
+static volatile int32_t g_rxFrameBufferIndex = 0;
+static volatile int32_t g_publishedFrameBufferIndex = -1;
+static volatile int32_t g_processingFrameBufferIndex = -1;
 
 /* Tensor arena buffer for TensorFlow Lite Micro placed in SRAM01_HYPERRAM */
 namespace arm {
@@ -161,188 +160,127 @@ static void omv_init()
 struct PacketHeader {
     uint32_t magic;         // Magic Header (0x46524D45 -> "FRME")
     uint32_t frame_id;      // Sequential Frame ID
-    uint32_t total_len;     // Expected total size of raw pixels (36864)
+    uint32_t total_len;     // Expected total size of raw pixels
     uint32_t chunk_offset;  // Offset of this chunk in the frame buffer
     uint32_t chunk_len;     // Length of this chunk payload
 };
 
-/* --- UDP Video Receiver Task --- */
-static void vUdpVideoReceiverTask(void *pvParameters)
+static struct udp_pcb *s_udpVideoPcb = NULL;
+static uint32_t s_udpActiveFrameId = 0xFFFFFFFF;
+static uint32_t s_udpAccumulatedBytes = 0;
+static bool s_udpActiveFramePublished = false;
+
+static int32_t SelectNextRxFrameBuffer(void)
 {
-    (void)pvParameters;
-    struct netconn *conn;
-    err_t err;
-    struct netbuf *buf;
-    uint32_t packetsReceived = 0;
-    uint32_t validChunks = 0;
-    uint32_t completedFrames = 0;
-    uint32_t shortPackets = 0;
-    uint32_t badMagicPackets = 0;
-    uint32_t badLengthPackets = 0;
-    uint32_t badOffsetPackets = 0;
-    uint32_t staleFramePackets = 0;
-    uint32_t partialFrames = 0;
-    
-    LOG_INFO("UDP Video Receiver Task started.");
-
-    // Create a new UDP connection
-    conn = netconn_new(NETCONN_UDP);
-    if (conn == NULL) {
-        LOG_ERROR("Failed to create UDP connection.");
-        vTaskDelete(NULL);
-        return;
-    }
-
-    // Bind to the configured port
-    err = netconn_bind(conn, NULL, UDP_STREAM_PORT);
-    if (err != ERR_OK) {
-        LOG_ERROR("Failed to bind UDP connection to port %d.", UDP_STREAM_PORT);
-        netconn_delete(conn);
-        vTaskDelete(NULL);
-        return;
-    }
-
-    LOG_INFO("UDP server listening on port %d...", UDP_STREAM_PORT);
-    LOG_INFO("UdpRecv stack high water mark: %u words remaining.", (unsigned int)uxTaskGetStackHighWaterMark(NULL));
-    netconn_set_nonblocking(conn, 1);
-
-    uint32_t activeFrameId = 0xFFFFFFFF;
-    uint32_t accumulatedBytes = 0;
-    uint32_t lastReportedPackets = 0;
-    bool activeFramePublished = false;
-    TickType_t lastHeartbeatTick = xTaskGetTickCount();
-
-    while (1)
+    for (int32_t i = 0; i < 3; ++i)
     {
-        err = netconn_recv(conn, &buf);
-        if (err == ERR_WOULDBLOCK)
+        if ((i != g_publishedFrameBufferIndex) && (i != g_processingFrameBufferIndex))
         {
-            TickType_t now = xTaskGetTickCount();
-            if ((now - lastHeartbeatTick) >= pdMS_TO_TICKS(5000))
-            {
-                LOG_INFO("UDP RX heartbeat: packets=%u valid_chunks=%u completed_frames=%u partial_frames=%u partial=%u/%u short=%u bad_magic=%u bad_len=%u bad_offset=%u stale=%u",
-                         (unsigned int)packetsReceived,
-                         (unsigned int)validChunks,
-                         (unsigned int)completedFrames,
-                         (unsigned int)partialFrames,
-                         (unsigned int)accumulatedBytes,
-                         (unsigned int)FRAME_BUFFER_SIZE,
-                         (unsigned int)shortPackets,
-                         (unsigned int)badMagicPackets,
-                         (unsigned int)badLengthPackets,
-                         (unsigned int)badOffsetPackets,
-                         (unsigned int)staleFramePackets);
-                LOG_INFO("EMAC RX heartbeat: frames=%u input_errors=%u alloc_drops=%u netif_flags=0x%02x",
-                         (unsigned int)EMAC_GetRxFrameCount(),
-                         (unsigned int)EMAC_GetRxInputErrorCount(),
-                         (unsigned int)EMAC_GetRxAllocDropCount(),
-                         (unsigned int)g_netif.flags);
-                if (packetsReceived == lastReportedPackets)
-                {
-                    LOG_INFO("UDP RX heartbeat: no packets arrived in the last 5 seconds.");
-                }
-                lastReportedPackets = packetsReceived;
-                lastHeartbeatTick = now;
-            }
-            vTaskDelay(pdMS_TO_TICKS(10));
-            continue;
+            return i;
         }
-        else if (err != ERR_OK)
+    }
+
+    return g_rxFrameBufferIndex;
+}
+
+static void PublishReceivedFrame(void)
+{
+    taskENTER_CRITICAL();
+    g_publishedFrameBufferIndex = g_rxFrameBufferIndex;
+    s_udpActiveFramePublished = true;
+    g_rxFrameBufferIndex = SelectNextRxFrameBuffer();
+    taskEXIT_CRITICAL();
+
+    if (xInferenceTaskHandle != NULL)
+    {
+        xTaskNotifyGive(xInferenceTaskHandle);
+    }
+}
+
+static void UdpVideoReceiveCallback(void *arg,
+                                    struct udp_pcb *pcb,
+                                    struct pbuf *p,
+                                    const ip_addr_t *addr,
+                                    u16_t port)
+{
+    (void)arg;
+    (void)pcb;
+    (void)addr;
+    (void)port;
+
+    if (p == NULL)
+    {
+        return;
+    }
+
+    if (p->tot_len >= sizeof(PacketHeader))
+    {
+        PacketHeader header;
+        if (pbuf_copy_partial(p, &header, sizeof(header), 0) == sizeof(header))
         {
-            LOG_ERROR("UDP receive failed: lwIP err=%d", (int)err);
-            vTaskDelay(pdMS_TO_TICKS(1000));
-            continue;
-        }
+            uint32_t magic = ntohl(header.magic);
+            uint32_t frameId = ntohl(header.frame_id);
+            uint32_t totalLen = ntohl(header.total_len);
+            uint32_t chunkOffset = ntohl(header.chunk_offset);
+            uint32_t chunkLen = ntohl(header.chunk_len);
 
-        packetsReceived++;
-
-        if (buf->p == NULL)
-        {
-            shortPackets++;
-            netbuf_delete(buf);
-            continue;
-        }
-
-        uint16_t packetLen = buf->p->tot_len;
-        
-        // Validate packet size (must contain at least the 20-byte header)
-        if (packetLen >= sizeof(PacketHeader))
-        {
-            PacketHeader *header = (PacketHeader *)buf->p->payload;
-            
-            // Parse Network Byte Order (Big Endian) to Host Byte Order
-            uint32_t magic = ntohl(header->magic);
-            uint32_t frameId = ntohl(header->frame_id);
-            uint32_t totalLen = ntohl(header->total_len);
-            uint32_t chunkOffset = ntohl(header->chunk_offset);
-            uint32_t chunkLen = ntohl(header->chunk_len);
-
-            if (magic != UDP_MAGIC_HEADER)
+            if ((magic == UDP_MAGIC_HEADER) &&
+                (totalLen == FRAME_BUFFER_SIZE) &&
+                ((chunkOffset + chunkLen) <= FRAME_BUFFER_SIZE) &&
+                (p->tot_len >= (sizeof(PacketHeader) + chunkLen)))
             {
-                badMagicPackets++;
-            }
-            else if (totalLen != FRAME_BUFFER_SIZE)
-            {
-                badLengthPackets++;
-            }
-            else if ((chunkOffset + chunkLen) > FRAME_BUFFER_SIZE ||
-                     packetLen < (sizeof(PacketHeader) + chunkLen))
-            {
-                badOffsetPackets++;
-            }
-            else
-            {
-                // Start a new frame if chunk_offset is 0.
                 if (chunkOffset == 0)
                 {
-                    if ((activeFrameId != 0xFFFFFFFF) && !activeFramePublished && (accumulatedBytes > 0))
-                    {
-                        memcpy(g_inferenceFrameBuffer, g_networkFrameBuffer, FRAME_BUFFER_SIZE);
-                        partialFrames++;
-
-                        if (xInferenceTaskHandle != NULL)
-                        {
-                            xTaskNotifyGive(xInferenceTaskHandle);
-                        }
-                    }
-
-                    activeFrameId = frameId;
-                    accumulatedBytes = 0;
-                    activeFramePublished = false;
+                    s_udpActiveFrameId = frameId;
+                    s_udpAccumulatedBytes = 0;
+                    s_udpActiveFramePublished = false;
                 }
 
-                if (frameId == activeFrameId)
+                if ((frameId == s_udpActiveFrameId) && !s_udpActiveFramePublished)
                 {
-                    uint8_t *payloadData = (uint8_t *)buf->p->payload + sizeof(PacketHeader);
-                    memcpy(g_networkFrameBuffer + chunkOffset, payloadData, chunkLen);
-                    accumulatedBytes += chunkLen;
-                    validChunks++;
-
-                    if (accumulatedBytes == FRAME_BUFFER_SIZE)
+                    uint8_t *rxFrame = g_udpFrameBuffers[g_rxFrameBufferIndex];
+                    if (pbuf_copy_partial(p,
+                                          rxFrame + chunkOffset,
+                                          (u16_t)chunkLen,
+                                          sizeof(PacketHeader)) == chunkLen)
                     {
-                        memcpy(g_inferenceFrameBuffer, g_networkFrameBuffer, FRAME_BUFFER_SIZE);
-                        completedFrames++;
-                        activeFramePublished = true;
-                        
-                        if (xInferenceTaskHandle != NULL)
+                        s_udpAccumulatedBytes += chunkLen;
+
+                        if (s_udpAccumulatedBytes == FRAME_BUFFER_SIZE)
                         {
-                            xTaskNotifyGive(xInferenceTaskHandle);
+                            PublishReceivedFrame();
                         }
                     }
-                }
-                else
-                {
-                    staleFramePackets++;
                 }
             }
         }
-        else
-        {
-            shortPackets++;
-        }
-
-        netbuf_delete(buf);
     }
+
+    pbuf_free(p);
+}
+
+static void UdpVideoInitCallback(void *arg)
+{
+    (void)arg;
+
+    s_udpVideoPcb = udp_new();
+    if (s_udpVideoPcb == NULL)
+    {
+        LOG_ERROR("Failed to create raw UDP PCB.");
+        return;
+    }
+
+    err_t err = udp_bind(s_udpVideoPcb, IP_ADDR_ANY, UDP_STREAM_PORT);
+    if (err != ERR_OK)
+    {
+        LOG_ERROR("Failed to bind raw UDP PCB to port %d: lwIP err=%d", UDP_STREAM_PORT, (int)err);
+        udp_remove(s_udpVideoPcb);
+        s_udpVideoPcb = NULL;
+        return;
+    }
+
+    udp_recv(s_udpVideoPcb, UdpVideoReceiveCallback, NULL);
+    LOG_INFO("Raw UDP video receiver listening on port %d.", UDP_STREAM_PORT);
 }
 
 static bool EmbeddedModelContainsEthosUCustomOp(void)
@@ -469,8 +407,19 @@ static void vInferenceTask(void *pvParameters)
 
     while (1)
     {
-        // Wait for UDP receiver to signal a complete frame
+        // Wait for the raw UDP callback to publish a complete frame.
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+        taskENTER_CRITICAL();
+        int32_t frameBufferIndex = g_publishedFrameBufferIndex;
+        g_processingFrameBufferIndex = frameBufferIndex;
+        taskEXIT_CRITICAL();
+
+        if (frameBufferIndex < 0)
+        {
+            continue;
+        }
+
+        const uint8_t *inferenceFrame = g_udpFrameBuffers[frameBufferIndex];
         uint64_t loopStart = pmu_get_systick_Count();
 
         // 1. Quantize the raw RGB pixels into the model input tensor (int8)
@@ -481,14 +430,14 @@ static void vInferenceTask(void *pvParameters)
         {
             for (int i = 0; i < FRAME_BUFFER_SIZE; ++i)
             {
-                signedInputData[i] = static_cast<int8_t>((((uint16_t)g_inferenceFrameBuffer[i] + 1U) >> 1) - 1);
+                signedInputData[i] = static_cast<int8_t>((((uint16_t)inferenceFrame[i] + 1U) >> 1) - 1);
             }
         }
         else
         {
             for (int i = 0; i < FRAME_BUFFER_SIZE; ++i)
             {
-                float pixelFloat = static_cast<float>(g_inferenceFrameBuffer[i]);
+                float pixelFloat = static_cast<float>(inferenceFrame[i]);
                 float normalized = (inQuantParams.scale < 0.05f) ? (pixelFloat / 255.0f) : pixelFloat;
                 int32_t quantized = static_cast<int32_t>(roundf(normalized / inQuantParams.scale)) + inQuantParams.offset;
 
@@ -536,7 +485,7 @@ static void vInferenceTask(void *pvParameters)
 #if defined(__EBI_LCD_PANEL__)
         // Scale the raw RGB888 input frame to fill the LCD and convert to RGB565.
         stageStart = pmu_get_systick_Count();
-        ConvertRgb888ToRgb565Scaled(g_inferenceFrameBuffer,
+        ConvertRgb888ToRgb565Scaled(inferenceFrame,
                                     (uint16_t *)dstImg.data,
                                     LCD_DISPLAY_WIDTH,
                                     LCD_DISPLAY_HEIGHT);
@@ -593,6 +542,12 @@ static void vInferenceTask(void *pvParameters)
         lcdMs = CyclesToMs(pmu_get_systick_Count() - stageStart);
         loopMs = CyclesToMs(pmu_get_systick_Count() - loopStart);
 #endif
+        taskENTER_CRITICAL();
+        if (g_processingFrameBufferIndex == frameBufferIndex)
+        {
+            g_processingFrameBufferIndex = -1;
+        }
+        taskEXIT_CRITICAL();
     }
 }
 
@@ -659,12 +614,10 @@ static void vNetworkInitTask(void *pvParameters)
     LOG_INFO("  Subnet mask:     %s", ip4addr_ntoa(&g_netif.netmask));
     LOG_INFO("  Default gateway: %s", ip4addr_ntoa(&g_netif.gw));
 
-    // Spawn the high performance UDP Video Receiver thread
-    LOG_INFO("Spawning UDP Video Receiver Task (Stack: 2048 words, Priority: %lu)...", (unsigned long)(tskIDLE_PRIORITY + 3UL));
-    if (xTaskCreate(vUdpVideoReceiverTask, "UdpRecv", 2048, NULL, tskIDLE_PRIORITY + 3UL, &xUdpReceiverTaskHandle) != pdPASS)
+    LOG_INFO("Registering raw UDP video receiver callback...");
+    if (tcpip_callback(UdpVideoInitCallback, NULL) != ERR_OK)
     {
-        LOG_ERROR("Failed to create UDP Video Receiver Task. FreeRTOS heap remaining: %u bytes.",
-                  (unsigned int)xPortGetFreeHeapSize());
+        LOG_ERROR("Failed to schedule raw UDP receiver initialization.");
         vTaskDelete(NULL);
         return;
     }
