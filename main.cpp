@@ -136,6 +136,7 @@ static void vUdpVideoReceiverTask(void *pvParameters)
     uint32_t badLengthPackets = 0;
     uint32_t badOffsetPackets = 0;
     uint32_t staleFramePackets = 0;
+    uint32_t partialFrames = 0;
     
     LOG_INFO("UDP Video Receiver Task started.");
 
@@ -163,6 +164,7 @@ static void vUdpVideoReceiverTask(void *pvParameters)
     uint32_t activeFrameId = 0xFFFFFFFF;
     uint32_t accumulatedBytes = 0;
     uint32_t lastReportedPackets = 0;
+    bool activeFramePublished = false;
     TickType_t lastHeartbeatTick = xTaskGetTickCount();
 
     while (1)
@@ -173,10 +175,11 @@ static void vUdpVideoReceiverTask(void *pvParameters)
             TickType_t now = xTaskGetTickCount();
             if ((now - lastHeartbeatTick) >= pdMS_TO_TICKS(5000))
             {
-                LOG_INFO("UDP RX heartbeat: packets=%u valid_chunks=%u completed_frames=%u partial=%u/%u short=%u bad_magic=%u bad_len=%u bad_offset=%u stale=%u",
+                LOG_INFO("UDP RX heartbeat: packets=%u valid_chunks=%u completed_frames=%u partial_frames=%u partial=%u/%u short=%u bad_magic=%u bad_len=%u bad_offset=%u stale=%u",
                          (unsigned int)packetsReceived,
                          (unsigned int)validChunks,
                          (unsigned int)completedFrames,
+                         (unsigned int)partialFrames,
                          (unsigned int)accumulatedBytes,
                          (unsigned int)FRAME_BUFFER_SIZE,
                          (unsigned int)shortPackets,
@@ -247,8 +250,20 @@ static void vUdpVideoReceiverTask(void *pvParameters)
                 // Start a new frame if chunk_offset is 0.
                 if (chunkOffset == 0)
                 {
+                    if ((activeFrameId != 0xFFFFFFFF) && !activeFramePublished && (accumulatedBytes > 0))
+                    {
+                        memcpy(g_inferenceFrameBuffer, g_networkFrameBuffer, FRAME_BUFFER_SIZE);
+                        partialFrames++;
+
+                        if (xInferenceTaskHandle != NULL)
+                        {
+                            xTaskNotifyGive(xInferenceTaskHandle);
+                        }
+                    }
+
                     activeFrameId = frameId;
                     accumulatedBytes = 0;
+                    activeFramePublished = false;
                 }
 
                 if (frameId == activeFrameId)
@@ -262,6 +277,7 @@ static void vUdpVideoReceiverTask(void *pvParameters)
                     {
                         memcpy(g_inferenceFrameBuffer, g_networkFrameBuffer, FRAME_BUFFER_SIZE);
                         completedFrames++;
+                        activeFramePublished = true;
                         
                         if (xInferenceTaskHandle != NULL)
                         {
