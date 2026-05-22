@@ -404,8 +404,11 @@ static void vInferenceTask(void *pvParameters)
 
 #if defined(__EBI_LCD_PANEL__)
     S_DISP_RECT sDispRect;
+    LOG_INFO("Initializing LCD panel...");
     Display_Init();
+    LOG_INFO("LCD panel initialization returned. Clearing LCD...");
     Display_ClearLCD(C_WHITE);
+    LOG_INFO("LCD clear complete.");
 #endif
 
     uint64_t frameCount = 0;
