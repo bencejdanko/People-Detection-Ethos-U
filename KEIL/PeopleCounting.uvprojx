@@ -337,7 +337,7 @@
               <MiscControls />
               <Define>NVT_VECTOR_ON_FLASH, TF_LITE_STATIC_MEMORY, ARM_MATH_DSP, ARM_NPU, ACTIVATION_BUF_SZ=0x00100000</Define>
               <Undefine />
-              <IncludePath>C:\M55M1BSP\Library\CMSIS\Core\Include;C:\M55M1BSP\Library\Device\Nuvoton\M55M1\Include;C:\M55M1BSP\Library\CMSIS\DSP\Include;C:\M55M1BSP\Library\StdDriver\inc;C:\M55M1BSP\Library\StdDriver\inc\npu;C:\M55M1BSP\ThirdParty\openmv\omv\imlib;C:\M55M1BSP\ThirdParty\openmv\omv\alloc;C:\M55M1BSP\ThirdParty\openmv\omv\common;C:\M55M1BSP\ThirdParty\openmv\omv\Lib;C:\M55M1BSP\ThirdParty\tflite_micro;C:\M55M1BSP\ThirdParty\tflite_micro\_deps\tensorflow-flatbuffers-src\include;C:\M55M1BSP\ThirdParty\ml-embedded-evaluation-kit\source\application\api\common\include;C:\M55M1BSP\ThirdParty\ml-embedded-evaluation-kit\source\log\include;C:\M55M1BSP\ThirdParty\ml-embedded-evaluation-kit\source\math\include;C:\M55M1BSP\ThirdParty\ml-embedded-evaluation-kit\source\application\main\include;C:\M55M1BSP\ThirdParty\ml-embedded-evaluation-kit\source\profiler\include;..\Device\include;..\model;..\NPU\include;..\Pattern\include;..\ProfilerCounter\include;..;C:\M55M1BSP\ThirdParty\tflite_micro\_deps\tensorflow-gemlowp-src;C:\M55M1BSP\ThirdParty\FatFs\source;C:\M55M1BSP\ThirdParty\FreeRTOS\Source\include;C:\M55M1BSP\ThirdParty\FreeRTOS\Source\portable\GCC\ARM_CM55\non_secure;C:\M55M1BSP\ThirdParty\lwIP\src\include;C:\M55M1BSP\ThirdParty\lwIP\src\include\compat;C:\M55M1BSP\Library\StdDriver\inc\emac;..\Device\lwip_port\include;..\Device\lwip_port\drv_emac;..\Device\lwip_port\netif</IncludePath>
+              <IncludePath>..\M55M1BSP\Library\CMSIS\Core\Include;..\M55M1BSP\Library\Device\Nuvoton\M55M1\Include;..\M55M1BSP\Library\CMSIS\DSP\Include;..\M55M1BSP\Library\StdDriver\inc;..\M55M1BSP\Library\StdDriver\inc\npu;..\M55M1BSP\ThirdParty\openmv\omv\imlib;..\M55M1BSP\ThirdParty\openmv\omv\alloc;..\M55M1BSP\ThirdParty\openmv\omv\common;..\M55M1BSP\ThirdParty\openmv\omv\Lib;..\M55M1BSP\ThirdParty\tflite_micro;..\M55M1BSP\ThirdParty\tflite_micro\_deps\tensorflow-flatbuffers-src\include;..\M55M1BSP\ThirdParty\ml-embedded-evaluation-kit\source\application\api\common\include;..\M55M1BSP\ThirdParty\ml-embedded-evaluation-kit\source\log\include;..\M55M1BSP\ThirdParty\ml-embedded-evaluation-kit\source\math\include;..\M55M1BSP\ThirdParty\ml-embedded-evaluation-kit\source\application\main\include;..\M55M1BSP\ThirdParty\ml-embedded-evaluation-kit\source\profiler\include;..\Device\include;..\model;..\NPU\include;..\Pattern\include;..\ProfilerCounter\include;..;..\M55M1BSP\ThirdParty\tflite_micro\_deps\tensorflow-gemlowp-src;..\M55M1BSP\ThirdParty\FatFs\source;..\M55M1BSP\ThirdParty\FreeRTOS\Source\include;..\M55M1BSP\ThirdParty\FreeRTOS\Source\portable\GCC\ARM_CM55\non_secure;..\M55M1BSP\ThirdParty\lwIP\src\include;..\M55M1BSP\ThirdParty\lwIP\src\include\compat;..\M55M1BSP\Library\StdDriver\inc\emac;..\Device\lwip_port\include;..\Device\lwip_port\drv_emac;..\Device\lwip_port\netif</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -382,14 +382,14 @@
           <GroupName>CMSIS</GroupName>
           <Files>
             <File>
-              <FileName>C:\M55M1BSP\Library\Device\Nuvoton\M55M1\Source\startup_M55M1.c</FileName>
+              <FileName>..\M55M1BSP\Library\Device\Nuvoton\M55M1\Source\startup_M55M1.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\M55M1BSP\Library\Device\Nuvoton\M55M1\Source\startup_M55M1.c</FilePath>
+              <FilePath>..\M55M1BSP\Library\Device\Nuvoton\M55M1\Source\startup_M55M1.c</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\Library\Device\Nuvoton\M55M1\Source\system_M55M1.c</FileName>
+              <FileName>..\M55M1BSP\Library\Device\Nuvoton\M55M1\Source\system_M55M1.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\M55M1BSP\Library\Device\Nuvoton\M55M1\Source\system_M55M1.c</FilePath>
+              <FilePath>..\M55M1BSP\Library\Device\Nuvoton\M55M1\Source\system_M55M1.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -397,94 +397,94 @@
           <GroupName>Driver</GroupName>
           <Files>
             <File>
-              <FileName>C:\M55M1BSP\Library\StdDriver\src\uart.c</FileName>
+              <FileName>..\M55M1BSP\Library\StdDriver\src\uart.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\M55M1BSP\Library\StdDriver\src\uart.c</FilePath>
+              <FilePath>..\M55M1BSP\Library\StdDriver\src\uart.c</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\Library\StdDriver\src\retarget.c</FileName>
+              <FileName>..\M55M1BSP\Library\StdDriver\src\retarget.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\M55M1BSP\Library\StdDriver\src\retarget.c</FilePath>
+              <FilePath>..\M55M1BSP\Library\StdDriver\src\retarget.c</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\Library\StdDriver\src\ccap.c</FileName>
+              <FileName>..\M55M1BSP\Library\StdDriver\src\ccap.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\M55M1BSP\Library\StdDriver\src\ccap.c</FilePath>
+              <FilePath>..\M55M1BSP\Library\StdDriver\src\ccap.c</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\Library\StdDriver\src\clk.c</FileName>
+              <FileName>..\M55M1BSP\Library\StdDriver\src\clk.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\M55M1BSP\Library\StdDriver\src\clk.c</FilePath>
+              <FilePath>..\M55M1BSP\Library\StdDriver\src\clk.c</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\Library\StdDriver\src\sys.c</FileName>
+              <FileName>..\M55M1BSP\Library\StdDriver\src\sys.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\M55M1BSP\Library\StdDriver\src\sys.c</FilePath>
+              <FilePath>..\M55M1BSP\Library\StdDriver\src\sys.c</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\Library\StdDriver\src\gpio.c</FileName>
+              <FileName>..\M55M1BSP\Library\StdDriver\src\gpio.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\M55M1BSP\Library\StdDriver\src\gpio.c</FilePath>
+              <FilePath>..\M55M1BSP\Library\StdDriver\src\gpio.c</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\Library\StdDriver\src\npu\ethosu_device_u55_u65.c</FileName>
+              <FileName>..\M55M1BSP\Library\StdDriver\src\npu\ethosu_device_u55_u65.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\M55M1BSP\Library\StdDriver\src\npu\ethosu_device_u55_u65.c</FilePath>
+              <FilePath>..\M55M1BSP\Library\StdDriver\src\npu\ethosu_device_u55_u65.c</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\Library\StdDriver\src\npu\ethosu_driver.c</FileName>
+              <FileName>..\M55M1BSP\Library\StdDriver\src\npu\ethosu_driver.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\M55M1BSP\Library\StdDriver\src\npu\ethosu_driver.c</FilePath>
+              <FilePath>..\M55M1BSP\Library\StdDriver\src\npu\ethosu_driver.c</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\Library\StdDriver\src\npu\ethosu_pmu.c</FileName>
+              <FileName>..\M55M1BSP\Library\StdDriver\src\npu\ethosu_pmu.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\M55M1BSP\Library\StdDriver\src\npu\ethosu_pmu.c</FilePath>
+              <FilePath>..\M55M1BSP\Library\StdDriver\src\npu\ethosu_pmu.c</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\Library\StdDriver\src\ebi.c</FileName>
+              <FileName>..\M55M1BSP\Library\StdDriver\src\ebi.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\M55M1BSP\Library\StdDriver\src\ebi.c</FilePath>
+              <FilePath>..\M55M1BSP\Library\StdDriver\src\ebi.c</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\Library\StdDriver\src\spim_hyper.c</FileName>
+              <FileName>..\M55M1BSP\Library\StdDriver\src\spim_hyper.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\M55M1BSP\Library\StdDriver\src\spim_hyper.c</FilePath>
+              <FilePath>..\M55M1BSP\Library\StdDriver\src\spim_hyper.c</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\Library\StdDriver\src\sdh.c</FileName>
+              <FileName>..\M55M1BSP\Library\StdDriver\src\sdh.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\M55M1BSP\Library\StdDriver\src\sdh.c</FilePath>
+              <FilePath>..\M55M1BSP\Library\StdDriver\src\sdh.c</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\Library\StdDriver\src\spi.c</FileName>
+              <FileName>..\M55M1BSP\Library\StdDriver\src\spi.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\M55M1BSP\Library\StdDriver\src\spi.c</FilePath>
+              <FilePath>..\M55M1BSP\Library\StdDriver\src\spi.c</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\Library\StdDriver\src\hsusbd.c</FileName>
+              <FileName>..\M55M1BSP\Library\StdDriver\src\hsusbd.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\M55M1BSP\Library\StdDriver\src\hsusbd.c</FilePath>
+              <FilePath>..\M55M1BSP\Library\StdDriver\src\hsusbd.c</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\Library\StdDriver\src\pdma.c</FileName>
+              <FileName>..\M55M1BSP\Library\StdDriver\src\pdma.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\M55M1BSP\Library\StdDriver\src\pdma.c</FilePath>
+              <FilePath>..\M55M1BSP\Library\StdDriver\src\pdma.c</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\Library\StdDriver\src\emac\synopGMAC_Dev.c</FileName>
+              <FileName>..\M55M1BSP\Library\StdDriver\src\emac\synopGMAC_Dev.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\M55M1BSP\Library\StdDriver\src\emac\synopGMAC_Dev.c</FilePath>
+              <FilePath>..\M55M1BSP\Library\StdDriver\src\emac\synopGMAC_Dev.c</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\Library\StdDriver\src\emac\synopGMAC_network_interface.c</FileName>
+              <FileName>..\M55M1BSP\Library\StdDriver\src\emac\synopGMAC_network_interface.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\M55M1BSP\Library\StdDriver\src\emac\synopGMAC_network_interface.c</FilePath>
+              <FilePath>..\M55M1BSP\Library\StdDriver\src\emac\synopGMAC_network_interface.c</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\Library\StdDriver\src\emac\synopGMAC_plat.c</FileName>
+              <FileName>..\M55M1BSP\Library\StdDriver\src\emac\synopGMAC_plat.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\M55M1BSP\Library\StdDriver\src\emac\synopGMAC_plat.c</FilePath>
+              <FilePath>..\M55M1BSP\Library\StdDriver\src\emac\synopGMAC_plat.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -522,24 +522,24 @@
           <GroupName>Lib</GroupName>
           <Files>
             <File>
-              <FileName>C:\M55M1BSP\Library\CMSIS\Lib\KEIL\cmsis_dsp.lib</FileName>
+              <FileName>..\M55M1BSP\Library\CMSIS\Lib\KEIL\cmsis_dsp.lib</FileName>
               <FileType>4</FileType>
-              <FilePath>C:\M55M1BSP\Library\CMSIS\Lib\KEIL\cmsis_dsp.lib</FilePath>
+              <FilePath>..\M55M1BSP\Library\CMSIS\Lib\KEIL\cmsis_dsp.lib</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\ThirdParty\tflite_micro\Lib\tflu.lib</FileName>
+              <FileName>..\M55M1BSP\ThirdParty\tflite_micro\Lib\tflu.lib</FileName>
               <FileType>4</FileType>
-              <FilePath>C:\M55M1BSP\ThirdParty\tflite_micro\Lib\tflu.lib</FilePath>
+              <FilePath>..\M55M1BSP\ThirdParty\tflite_micro\Lib\tflu.lib</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\Library\CMSIS\Lib\KEIL\cmsis_nn.lib</FileName>
+              <FileName>..\M55M1BSP\Library\CMSIS\Lib\KEIL\cmsis_nn.lib</FileName>
               <FileType>4</FileType>
-              <FilePath>C:\M55M1BSP\Library\CMSIS\Lib\KEIL\cmsis_nn.lib</FilePath>
+              <FilePath>..\M55M1BSP\Library\CMSIS\Lib\KEIL\cmsis_nn.lib</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\ThirdParty\openmv\omv\Lib\omv.lib</FileName>
+              <FileName>..\M55M1BSP\ThirdParty\openmv\omv\Lib\omv.lib</FileName>
               <FileType>4</FileType>
-              <FilePath>C:\M55M1BSP\ThirdParty\openmv\omv\Lib\omv.lib</FilePath>
+              <FilePath>..\M55M1BSP\ThirdParty\openmv\omv\Lib\omv.lib</FilePath>
             </File>
           </Files>
         </Group>
@@ -557,24 +557,24 @@
           <GroupName>ArmMLApi</GroupName>
           <Files>
             <File>
-              <FileName>C:\M55M1BSP\ThirdParty\ml-embedded-evaluation-kit\source\application\api\common\source\Model.cc</FileName>
+              <FileName>..\M55M1BSP\ThirdParty\ml-embedded-evaluation-kit\source\application\api\common\source\Model.cc</FileName>
               <FileType>8</FileType>
-              <FilePath>C:\M55M1BSP\ThirdParty\ml-embedded-evaluation-kit\source\application\api\common\source\Model.cc</FilePath>
+              <FilePath>..\M55M1BSP\ThirdParty\ml-embedded-evaluation-kit\source\application\api\common\source\Model.cc</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\ThirdParty\ml-embedded-evaluation-kit\source\application\api\common\source\TensorFlowLiteMicro.cc</FileName>
+              <FileName>..\M55M1BSP\ThirdParty\ml-embedded-evaluation-kit\source\application\api\common\source\TensorFlowLiteMicro.cc</FileName>
               <FileType>8</FileType>
-              <FilePath>C:\M55M1BSP\ThirdParty\ml-embedded-evaluation-kit\source\application\api\common\source\TensorFlowLiteMicro.cc</FilePath>
+              <FilePath>..\M55M1BSP\ThirdParty\ml-embedded-evaluation-kit\source\application\api\common\source\TensorFlowLiteMicro.cc</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\ThirdParty\ml-embedded-evaluation-kit\source\math\PlatformMath.cc</FileName>
+              <FileName>..\M55M1BSP\ThirdParty\ml-embedded-evaluation-kit\source\math\PlatformMath.cc</FileName>
               <FileType>8</FileType>
-              <FilePath>C:\M55M1BSP\ThirdParty\ml-embedded-evaluation-kit\source\math\PlatformMath.cc</FilePath>
+              <FilePath>..\M55M1BSP\ThirdParty\ml-embedded-evaluation-kit\source\math\PlatformMath.cc</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\ThirdParty\ml-embedded-evaluation-kit\source\profiler\Profiler.cc</FileName>
+              <FileName>..\M55M1BSP\ThirdParty\ml-embedded-evaluation-kit\source\profiler\Profiler.cc</FileName>
               <FileType>8</FileType>
-              <FilePath>C:\M55M1BSP\ThirdParty\ml-embedded-evaluation-kit\source\profiler\Profiler.cc</FilePath>
+              <FilePath>..\M55M1BSP\ThirdParty\ml-embedded-evaluation-kit\source\profiler\Profiler.cc</FilePath>
             </File>
           </Files>
         </Group>
@@ -677,9 +677,9 @@
               <FilePath>..\Device\Display\drv_pdma.c</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\Library\Storage\diskio_SDH.c</FileName>
+              <FileName>..\M55M1BSP\Library\Storage\diskio_SDH.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\M55M1BSP\Library\Storage\diskio_SDH.c</FilePath>
+              <FilePath>..\M55M1BSP\Library\Storage\diskio_SDH.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -687,14 +687,14 @@
           <GroupName>FatFS</GroupName>
           <Files>
             <File>
-              <FileName>C:\M55M1BSP\ThirdParty\FatFs\source\ff.c</FileName>
+              <FileName>..\M55M1BSP\ThirdParty\FatFs\source\ff.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\M55M1BSP\ThirdParty\FatFs\source\ff.c</FilePath>
+              <FilePath>..\M55M1BSP\ThirdParty\FatFs\source\ff.c</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\ThirdParty\FatFs\source\ffunicode.c</FileName>
+              <FileName>..\M55M1BSP\ThirdParty\FatFs\source\ffunicode.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\M55M1BSP\ThirdParty\FatFs\source\ffunicode.c</FilePath>
+              <FilePath>..\M55M1BSP\ThirdParty\FatFs\source\ffunicode.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -722,44 +722,44 @@
           <GroupName>FreeRTOS</GroupName>
           <Files>
             <File>
-              <FileName>C:\M55M1BSP\ThirdParty\FreeRTOS\Source\tasks.c</FileName>
+              <FileName>..\M55M1BSP\ThirdParty\FreeRTOS\Source\tasks.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\M55M1BSP\ThirdParty\FreeRTOS\Source\tasks.c</FilePath>
+              <FilePath>..\M55M1BSP\ThirdParty\FreeRTOS\Source\tasks.c</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\ThirdParty\FreeRTOS\Source\queue.c</FileName>
+              <FileName>..\M55M1BSP\ThirdParty\FreeRTOS\Source\queue.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\M55M1BSP\ThirdParty\FreeRTOS\Source\queue.c</FilePath>
+              <FilePath>..\M55M1BSP\ThirdParty\FreeRTOS\Source\queue.c</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\ThirdParty\FreeRTOS\Source\list.c</FileName>
+              <FileName>..\M55M1BSP\ThirdParty\FreeRTOS\Source\list.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\M55M1BSP\ThirdParty\FreeRTOS\Source\list.c</FilePath>
+              <FilePath>..\M55M1BSP\ThirdParty\FreeRTOS\Source\list.c</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\ThirdParty\FreeRTOS\Source\timers.c</FileName>
+              <FileName>..\M55M1BSP\ThirdParty\FreeRTOS\Source\timers.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\M55M1BSP\ThirdParty\FreeRTOS\Source\timers.c</FilePath>
+              <FilePath>..\M55M1BSP\ThirdParty\FreeRTOS\Source\timers.c</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\ThirdParty\FreeRTOS\Source\event_groups.c</FileName>
+              <FileName>..\M55M1BSP\ThirdParty\FreeRTOS\Source\event_groups.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\M55M1BSP\ThirdParty\FreeRTOS\Source\event_groups.c</FilePath>
+              <FilePath>..\M55M1BSP\ThirdParty\FreeRTOS\Source\event_groups.c</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\ThirdParty\FreeRTOS\Source\portable\GCC\ARM_CM55\non_secure\port.c</FileName>
+              <FileName>..\M55M1BSP\ThirdParty\FreeRTOS\Source\portable\GCC\ARM_CM55\non_secure\port.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\M55M1BSP\ThirdParty\FreeRTOS\Source\portable\GCC\ARM_CM55\non_secure\port.c</FilePath>
+              <FilePath>..\M55M1BSP\ThirdParty\FreeRTOS\Source\portable\GCC\ARM_CM55\non_secure\port.c</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\ThirdParty\FreeRTOS\Source\portable\GCC\ARM_CM55\non_secure\portasm.c</FileName>
+              <FileName>..\M55M1BSP\ThirdParty\FreeRTOS\Source\portable\GCC\ARM_CM55\non_secure\portasm.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\M55M1BSP\ThirdParty\FreeRTOS\Source\portable\GCC\ARM_CM55\non_secure\portasm.c</FilePath>
+              <FilePath>..\M55M1BSP\ThirdParty\FreeRTOS\Source\portable\GCC\ARM_CM55\non_secure\portasm.c</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\ThirdParty\FreeRTOS\Source\portable\MemMang\heap_4.c</FileName>
+              <FileName>..\M55M1BSP\ThirdParty\FreeRTOS\Source\portable\MemMang\heap_4.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\M55M1BSP\ThirdParty\FreeRTOS\Source\portable\MemMang\heap_4.c</FilePath>
+              <FilePath>..\M55M1BSP\ThirdParty\FreeRTOS\Source\portable\MemMang\heap_4.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -767,179 +767,179 @@
           <GroupName>LwIP</GroupName>
           <Files>
             <File>
-              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\core\init.c</FileName>
+              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\core\init.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\core\init.c</FilePath>
+              <FilePath>..\M55M1BSP\ThirdParty\lwIP\src\core\init.c</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\core\def.c</FileName>
+              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\core\def.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\core\def.c</FilePath>
+              <FilePath>..\M55M1BSP\ThirdParty\lwIP\src\core\def.c</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\core\dns.c</FileName>
+              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\core\dns.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\core\dns.c</FilePath>
+              <FilePath>..\M55M1BSP\ThirdParty\lwIP\src\core\dns.c</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\core\inet_chksum.c</FileName>
+              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\core\inet_chksum.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\core\inet_chksum.c</FilePath>
+              <FilePath>..\M55M1BSP\ThirdParty\lwIP\src\core\inet_chksum.c</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\core\ip.c</FileName>
+              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\core\ip.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\core\ip.c</FilePath>
+              <FilePath>..\M55M1BSP\ThirdParty\lwIP\src\core\ip.c</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\core\mem.c</FileName>
+              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\core\mem.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\core\mem.c</FilePath>
+              <FilePath>..\M55M1BSP\ThirdParty\lwIP\src\core\mem.c</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\core\memp.c</FileName>
+              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\core\memp.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\core\memp.c</FilePath>
+              <FilePath>..\M55M1BSP\ThirdParty\lwIP\src\core\memp.c</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\core\netif.c</FileName>
+              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\core\netif.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\core\netif.c</FilePath>
+              <FilePath>..\M55M1BSP\ThirdParty\lwIP\src\core\netif.c</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\core\pbuf.c</FileName>
+              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\core\pbuf.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\core\pbuf.c</FilePath>
+              <FilePath>..\M55M1BSP\ThirdParty\lwIP\src\core\pbuf.c</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\core\raw.c</FileName>
+              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\core\raw.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\core\raw.c</FilePath>
+              <FilePath>..\M55M1BSP\ThirdParty\lwIP\src\core\raw.c</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\core\stats.c</FileName>
+              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\core\stats.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\core\stats.c</FilePath>
+              <FilePath>..\M55M1BSP\ThirdParty\lwIP\src\core\stats.c</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\core\sys_lwip.c</FileName>
+              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\core\sys_lwip.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\core\sys_lwip.c</FilePath>
+              <FilePath>..\M55M1BSP\ThirdParty\lwIP\src\core\sys_lwip.c</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\core\tcp.c</FileName>
+              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\core\tcp.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\core\tcp.c</FilePath>
+              <FilePath>..\M55M1BSP\ThirdParty\lwIP\src\core\tcp.c</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\core\tcp_in.c</FileName>
+              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\core\tcp_in.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\core\tcp_in.c</FilePath>
+              <FilePath>..\M55M1BSP\ThirdParty\lwIP\src\core\tcp_in.c</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\core\tcp_out.c</FileName>
+              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\core\tcp_out.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\core\tcp_out.c</FilePath>
+              <FilePath>..\M55M1BSP\ThirdParty\lwIP\src\core\tcp_out.c</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\core\timeouts.c</FileName>
+              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\core\timeouts.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\core\timeouts.c</FilePath>
+              <FilePath>..\M55M1BSP\ThirdParty\lwIP\src\core\timeouts.c</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\core\udp.c</FileName>
+              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\core\udp.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\core\udp.c</FilePath>
+              <FilePath>..\M55M1BSP\ThirdParty\lwIP\src\core\udp.c</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\core\ipv4\autoip.c</FileName>
+              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\core\ipv4\autoip.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\core\ipv4\autoip.c</FilePath>
+              <FilePath>..\M55M1BSP\ThirdParty\lwIP\src\core\ipv4\autoip.c</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\core\ipv4\dhcp.c</FileName>
+              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\core\ipv4\dhcp.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\core\ipv4\dhcp.c</FilePath>
+              <FilePath>..\M55M1BSP\ThirdParty\lwIP\src\core\ipv4\dhcp.c</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\core\ipv4\etharp.c</FileName>
+              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\core\ipv4\etharp.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\core\ipv4\etharp.c</FilePath>
+              <FilePath>..\M55M1BSP\ThirdParty\lwIP\src\core\ipv4\etharp.c</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\core\ipv4\icmp.c</FileName>
+              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\core\ipv4\icmp.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\core\ipv4\icmp.c</FilePath>
+              <FilePath>..\M55M1BSP\ThirdParty\lwIP\src\core\ipv4\icmp.c</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\core\ipv4\igmp.c</FileName>
+              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\core\ipv4\igmp.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\core\ipv4\igmp.c</FilePath>
+              <FilePath>..\M55M1BSP\ThirdParty\lwIP\src\core\ipv4\igmp.c</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\core\ipv4\ip4.c</FileName>
+              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\core\ipv4\ip4.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\core\ipv4\ip4.c</FilePath>
+              <FilePath>..\M55M1BSP\ThirdParty\lwIP\src\core\ipv4\ip4.c</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\core\ipv4\ip4_addr.c</FileName>
+              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\core\ipv4\ip4_addr.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\core\ipv4\ip4_addr.c</FilePath>
+              <FilePath>..\M55M1BSP\ThirdParty\lwIP\src\core\ipv4\ip4_addr.c</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\core\ipv4\ip4_frag.c</FileName>
+              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\core\ipv4\ip4_frag.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\core\ipv4\ip4_frag.c</FilePath>
+              <FilePath>..\M55M1BSP\ThirdParty\lwIP\src\core\ipv4\ip4_frag.c</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\api\api_lib.c</FileName>
+              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\api\api_lib.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\api\api_lib.c</FilePath>
+              <FilePath>..\M55M1BSP\ThirdParty\lwIP\src\api\api_lib.c</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\api\api_msg.c</FileName>
+              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\api\api_msg.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\api\api_msg.c</FilePath>
+              <FilePath>..\M55M1BSP\ThirdParty\lwIP\src\api\api_msg.c</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\api\err.c</FileName>
+              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\api\err.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\api\err.c</FilePath>
+              <FilePath>..\M55M1BSP\ThirdParty\lwIP\src\api\err.c</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\api\if_api.c</FileName>
+              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\api\if_api.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\api\if_api.c</FilePath>
+              <FilePath>..\M55M1BSP\ThirdParty\lwIP\src\api\if_api.c</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\api\netbuf.c</FileName>
+              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\api\netbuf.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\api\netbuf.c</FilePath>
+              <FilePath>..\M55M1BSP\ThirdParty\lwIP\src\api\netbuf.c</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\api\netdb.c</FileName>
+              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\api\netdb.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\api\netdb.c</FilePath>
+              <FilePath>..\M55M1BSP\ThirdParty\lwIP\src\api\netdb.c</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\api\netifapi.c</FileName>
+              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\api\netifapi.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\api\netifapi.c</FilePath>
+              <FilePath>..\M55M1BSP\ThirdParty\lwIP\src\api\netifapi.c</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\api\sockets.c</FileName>
+              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\api\sockets.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\api\sockets.c</FilePath>
+              <FilePath>..\M55M1BSP\ThirdParty\lwIP\src\api\sockets.c</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\api\tcpip.c</FileName>
+              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\api\tcpip.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\api\tcpip.c</FilePath>
+              <FilePath>..\M55M1BSP\ThirdParty\lwIP\src\api\tcpip.c</FilePath>
             </File>
             <File>
-              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\netif\ethernet.c</FileName>
+              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\netif\ethernet.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\netif\ethernet.c</FilePath>
+              <FilePath>..\M55M1BSP\ThirdParty\lwIP\src\netif\ethernet.c</FilePath>
             </File>
             <File>
               <FileName>..\Device\lwip_port\sys_arch.c</FileName>
