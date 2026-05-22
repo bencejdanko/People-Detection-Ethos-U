@@ -34,7 +34,7 @@ extern "C" {
 
 /* Global variables and TrustZone stub symbols for non-secure FreeRTOS */
 extern "C" {
-    uint8_t my_mac_addr[6] = DEFAULT_MAC0_ADDRESS;
+    uint8_t my_mac_addr[6] = BOARD_MAC_ADDR;
 
     // FreeRTOS portasm.c unconditionally references these symbols for TrustZone stack context allocation,
     // but they are unused when configENABLE_TRUSTZONE is 0. We define dummies to satisfy the linker.

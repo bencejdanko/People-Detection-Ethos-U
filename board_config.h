@@ -43,7 +43,7 @@
     #define STATIC_GATEWAY         "192.168.1.1"
 #endif
 
-#define DEFAULT_MAC0_ADDRESS       {0x00, 0x00, 0x24, 0xD4, 0x10, 0x30}
+#define BOARD_MAC_ADDR             {0x00, 0x00, 0x24, 0xD4, 0x10, 0x30}
 
 /* --- UDP VIDEO STREAM PROTOCOL CONFIGURATION --- */
 #define UDP_STREAM_PORT            5005
