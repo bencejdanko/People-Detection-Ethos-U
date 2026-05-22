@@ -148,8 +148,8 @@ int BoardInit(void)
     /* Enter direct-mapped mode to allow seamless memory-mapped model reading */
     SPIM_HYPER_EnterDirectMapMode(HYPERRAM_SPIM_PORT);
 
-    /* Open SD Card Disk for loading external files */
-    SDH_Open_Disk(SDH0, CardDetect_From_GPIO);
+    /* Open SD Card Disk for loading external files (bypassed in favor of embedded flash model) */
+    // SDH_Open_Disk(SDH0, CardDetect_From_GPIO);
 
     LOG_INFO("Hardware peripherals initialized.");
 

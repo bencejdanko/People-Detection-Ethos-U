@@ -50,8 +50,7 @@ extern "C" {
 /* Model and ML includes */
 #include "InferenceModel.hpp"
 #include "PostProcessor.hpp"
-#include "ModelFileReader.h"
-#include "ff.h"
+#include "embedded_model.h"
 
 #if defined(__EBI_LCD_PANEL__)
 #include "Display.h"
@@ -212,47 +211,13 @@ static void vUdpVideoReceiverTask(void *pvParameters)
     }
 }
 
-/* Copy model file from SD Card to HyperRAM */
+/* Copy model file from Embedded Flash array to HyperRAM */
 static int32_t LoadModelFromSDCard(void)
 {
-#define MODEL_FILE_PATH "0:\\model.tflite"
-#define EACH_READ_SIZE 512
-    
-    TCHAR sd_path[] = { '0', ':', 0 };
-    f_chdrive(sd_path);
-
-    int32_t fileSize;
-    int32_t fileReadIndex = 0;
-    int32_t bytesRead;
-    
-    LOG_INFO("Opening model file: %s", MODEL_FILE_PATH);
-    if (!ModelFileReader_Initialize(MODEL_FILE_PATH))
-    {
-        LOG_ERROR("Unable to open model: %s", MODEL_FILE_PATH);        
-        return -1;
-    }
-    
-    fileSize = ModelFileReader_FileSize();
-    LOG_INFO("Model file size: %d bytes", fileSize);
-
-    while (fileReadIndex < fileSize)
-    {
-        bytesRead = ModelFileReader_ReadData((BYTE *)(MODEL_AT_HYPERRAM_ADDR + fileReadIndex), EACH_READ_SIZE);
-        if (bytesRead < 0)
-            break;
-        fileReadIndex += bytesRead;
-    }
-    
-    ModelFileReader_Finish();
-    
-    if (fileReadIndex < fileSize)
-    {
-        LOG_ERROR("Incomplete model file read! Only read %d of %d bytes.", fileReadIndex, fileSize);
-        return -2;
-    }
-    
-    LOG_INFO("Model successfully loaded to HyperRAM.");
-    return fileSize;
+    LOG_INFO("Loading model directly from Embedded Flash memory...");
+    std::memcpy((void *)MODEL_AT_HYPERRAM_ADDR, g_model_tflite, g_model_tflite_len);
+    LOG_INFO("Model successfully loaded to HyperRAM (%d bytes).", g_model_tflite_len);
+    return g_model_tflite_len;
 }
 
 /* --- ML Inference and Post-Processing Task --- */

@@ -18,6 +18,8 @@
    
    Place the downloaded `.tflite` file at the root of this repository and rename it to `model.tflite`.
 
+3. Serialize the model to `embedded_model.h` with the `tflite_to_c.py` script.
+
 ### Running the Streamer
 
 Stream a live feed from the default webcam (`0`):
