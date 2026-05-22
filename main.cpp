@@ -810,5 +810,8 @@ void vApplicationStackOverflowHook(TaskHandle_t pxTask, char *pcTaskName)
     for (;;);
 }
 
-void vApplicationTickHook(void) {}
+void vApplicationTickHook(void)
+{
+    FreeRTOS_TickHook((uint32_t)xTaskGetTickCountFromISR());
+}
 }

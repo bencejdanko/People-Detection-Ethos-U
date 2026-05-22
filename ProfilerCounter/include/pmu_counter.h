@@ -48,6 +48,7 @@ void pmu_reset_counters(void);
  * @param[out]  Pointer to a pmu_counters object.
  **/
 void pmu_get_counters(pmu_counters *counters);
+void FreeRTOS_TickHook(uint32_t u32CurrentTickCnt);
 
 /**
  * @brief       Gets the systick counter value.
