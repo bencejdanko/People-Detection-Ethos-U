@@ -38,9 +38,9 @@
 #define LWIP_DHCP_ENABLE           0   // Set 1 for DHCP, 0 for static IP configuration
 
 #if !LWIP_DHCP_ENABLE
-    #define STATIC_IP_ADDR         "192.168.1.10"
+    #define STATIC_IP_ADDR         "192.168.0.50"
     #define STATIC_NETMASK         "255.255.255.0"
-    #define STATIC_GATEWAY         "192.168.1.1"
+    #define STATIC_GATEWAY         "192.168.0.1"
 #endif
 
 #define BOARD_MAC_ADDR             {0x00, 0x00, 0x24, 0xD4, 0x10, 0x30}

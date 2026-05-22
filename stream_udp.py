@@ -134,7 +134,7 @@ def stream_video(target_ip, target_port, source, fps, channels=3, chunk_delay=0.
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Host UDP Streamer for M55M1 People Counting")
-    parser.add_argument("--ip", type=str, default="192.168.1.10", help="Target M55M1 board IP address")
+    parser.add_argument("--ip", type=str, default="192.168.0.50", help="Target M55M1 board IP address")
     parser.add_argument("--port", type=int, default=5005, help="Target UDP port")
     parser.add_argument("--source", type=str, default="0", help="Webcam ID (e.g. '0') or path to video file")
     parser.add_argument("--fps", type=int, default=15, help="Frames per second to stream")

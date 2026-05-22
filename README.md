@@ -24,12 +24,12 @@
 
 Stream a live feed from the default webcam (`0`):
 ```bash
-python3 stream_udp.py --ip 192.168.1.10 --port 5005 --source 0 --fps 15
+python3 stream_udp.py --ip 192.168.0.50 --port 5005 --source 0 --fps 15
 ```
 
 Or stream a video file:
 ```bash
-python3 stream_udp.py --ip 192.168.1.10 --port 5005 --source "path/to/elevator_feed.mp4" --fps 15
+python3 stream_udp.py --ip 192.168.0.50 --port 5005 --source "path/to/elevator_feed.mp4" --fps 15
 ```
 ---
 
@@ -51,9 +51,9 @@ Logging can be fully toggled or customized in `board_config.h`:
 [INFO] Initializing Arm Ethos-U55 NPU...
 [INFO] Target system: NuMaker-X-M55M1D
 [INFO] Network stack successfully initialized.
-[INFO] IP address:      192.168.1.10
+[INFO] IP address:      192.168.0.50
 [INFO] Subnet mask:     255.255.255.0
-[INFO] Default gateway: 192.168.1.1
+[INFO] Default gateway: 192.168.0.1
 [INFO] UDP server listening on port 5005...
 [INFO] Opening model file: 0:\model.tflite
 [INFO] Model file size: 64464 bytes
