@@ -28,6 +28,7 @@
 #define configENABLE_FPU                         1
 #define configENABLE_MPU                         0
 #define configENABLE_TRUSTZONE                   0
+#define configRUN_FREERTOS_SECURE_ONLY           1
 #define configENABLE_MVE                         1
 
 #define configSUPPORT_STATIC_ALLOCATION         0
