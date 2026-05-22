@@ -6,12 +6,11 @@
 
 ## Installation
 
-To compile this project, you need the official Nuvoton M55M1 Board Support Package (BSP) containing the complete and untrimmed `Library` and `ThirdParty` dependencies (~1GB disk space).
-
 1. Clone the Official Nuvoton M55M1 BSP Repository:
-   Clone the repository to an accessible location on your machine (e.g., `C:\M55M1BSP`):
+   Clone the repository to the project root
    ```cmd
-   git clone https://github.com/OpenNuvoton/M55M1BSP.git C:\M55M1BSP
+   git clone https://github.com/OpenNuvoton/M55M1BSP.git 
+   ```
 
 2. Prepare Model Weights:
    Download the pre-trained FOMO model weights:
