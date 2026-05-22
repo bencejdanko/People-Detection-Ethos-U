@@ -8,7 +8,7 @@
 /* Core locking */
 #define LWIP_TCPIP_CORE_LOCKING         1
 
-#define SYS_LIGHTWEIGHT_TEMPO           1
+#define SYS_LIGHTWEIGHT_PROT            1
 
 /* Memory options */
 #define MEM_ALIGNMENT                   4

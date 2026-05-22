@@ -413,6 +413,7 @@ static void vNetworkInitTask(void *pvParameters)
 {
     (void)pvParameters;
     ip_addr_t ipaddr, netmask, gw;
+    struct netif *netifResult;
 
 #if LWIP_DHCP_ENABLE
     IP4_ADDR(&gw, 0, 0, 0, 0);
@@ -426,13 +427,26 @@ static void vNetworkInitTask(void *pvParameters)
 
     // Initialize TCP/IP core stack
     LOG_INFO("Initializing LwIP TCP/IP core stack...");
+    LOG_INFO("FreeRTOS heap before tcpip_init: %u bytes.", (unsigned int)xPortGetFreeHeapSize());
     tcpip_init(NULL, NULL);
     LOG_INFO("LwIP TCP/IP core stack initialized successfully.");
+    LOG_INFO("FreeRTOS heap after tcpip_init: %u bytes.", (unsigned int)xPortGetFreeHeapSize());
 
     // Register our Ethernet MAC (EMAC0) driver into LwIP netif
     LOG_INFO("Registering Ethernet MAC driver (EMAC0) to LwIP...");
-    netif_add(&g_netif, &ipaddr, &netmask, &gw, NULL, ethernetif_init, tcpip_input);
+    netifResult = netif_add(&g_netif, &ipaddr, &netmask, &gw, NULL, ethernetif_init, tcpip_input);
+    if (netifResult == NULL)
+    {
+        LOG_ERROR("netif_add failed while registering EMAC0. FreeRTOS heap remaining: %u bytes.",
+                  (unsigned int)xPortGetFreeHeapSize());
+        vTaskDelete(NULL);
+        return;
+    }
+    LOG_INFO("netif_add returned successfully. FreeRTOS heap remaining: %u bytes.",
+             (unsigned int)xPortGetFreeHeapSize());
+    LOG_INFO("Setting EMAC0 as the default LwIP interface...");
     netif_set_default(&g_netif);
+    LOG_INFO("Bringing EMAC0 interface UP...");
     netif_set_up(&g_netif);
     LOG_INFO("Ethernet interface registered and brought UP successfully.");
 
@@ -459,7 +473,13 @@ static void vNetworkInitTask(void *pvParameters)
 
     // Spawn the high performance UDP Video Receiver thread
     LOG_INFO("Spawning UDP Video Receiver Task (Stack: 2048 words, Priority: %lu)...", (unsigned long)(tskIDLE_PRIORITY + 3UL));
-    xTaskCreate(vUdpVideoReceiverTask, "UdpRecv", 2048, NULL, tskIDLE_PRIORITY + 3UL, &xUdpReceiverTaskHandle);
+    if (xTaskCreate(vUdpVideoReceiverTask, "UdpRecv", 2048, NULL, tskIDLE_PRIORITY + 3UL, &xUdpReceiverTaskHandle) != pdPASS)
+    {
+        LOG_ERROR("Failed to create UDP Video Receiver Task. FreeRTOS heap remaining: %u bytes.",
+                  (unsigned int)xPortGetFreeHeapSize());
+        vTaskDelete(NULL);
+        return;
+    }
 
     LOG_INFO("Network initialization complete.");
     LOG_INFO("NetInit stack high water mark: %u words remaining.", (unsigned int)uxTaskGetStackHighWaterMark(NULL));
@@ -528,10 +548,20 @@ int main(void)
 
     // Create system coordinator tasks
     LOG_INFO("Spawning NetworkInit FreeRTOS task (Stack: 2048 words, Priority: %lu)...", (unsigned long)(tskIDLE_PRIORITY + 4UL));
-    xTaskCreate(vNetworkInitTask, "NetInit", 2048, NULL, tskIDLE_PRIORITY + 4UL, NULL);
+    if (xTaskCreate(vNetworkInitTask, "NetInit", 2048, NULL, tskIDLE_PRIORITY + 4UL, NULL) != pdPASS)
+    {
+        LOG_ERROR("Failed to create NetworkInit task. FreeRTOS heap remaining: %u bytes.",
+                  (unsigned int)xPortGetFreeHeapSize());
+        while (1);
+    }
     
     LOG_INFO("Spawning ML Inference FreeRTOS task (Stack: 4096 words, Priority: %lu)...", (unsigned long)(tskIDLE_PRIORITY + 2UL));
-    xTaskCreate(vInferenceTask, "Inference", 4096, NULL, tskIDLE_PRIORITY + 2UL, &xInferenceTaskHandle);
+    if (xTaskCreate(vInferenceTask, "Inference", 4096, NULL, tskIDLE_PRIORITY + 2UL, &xInferenceTaskHandle) != pdPASS)
+    {
+        LOG_ERROR("Failed to create ML Inference task. FreeRTOS heap remaining: %u bytes.",
+                  (unsigned int)xPortGetFreeHeapSize());
+        while (1);
+    }
 
     // Start FreeRTOS scheduler
     LOG_INFO("Starting FreeRTOS Task Scheduler...");

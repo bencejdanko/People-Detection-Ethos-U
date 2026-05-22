@@ -55,6 +55,7 @@
 //#include "netif/ppp_oe.h"
 #include "emac.h"
 #include "string.h"
+#include "stdio.h"
 
 /* Define those to better describe your network interface. */
 #define IFNAME0 'e'
@@ -88,7 +89,7 @@ static void eth_rx_thread_entry(void *parameter);
 void ethernetif_input(u16_t len, u8_t *buf, u32_t s, u32_t ns);
 extern u8 my_mac_addr[6];
 
-static void low_level_init(struct netif *netif)
+static err_t low_level_init(struct netif *netif)
 {
     /* set MAC hardware address length */
     netif->hwaddr_len = ETHARP_HWADDR_LEN;
@@ -110,18 +111,36 @@ static void low_level_init(struct netif *netif)
     netif->flags |= NETIF_FLAG_IGMP;
 #endif
 
+    printf("[INFO] ethernetif: opening EMAC hardware...\n");
     EMAC_Open(&my_mac_addr[0]);
+    printf("[INFO] ethernetif: EMAC hardware open complete.\n");
 
     if (sys_sem_new(&xRxSemaphore, 0) != ERR_OK)
     {
-        while (1);
+        printf("[ERROR] ethernetif: failed to create RX startup semaphore.\n");
+        return ERR_MEM;
     }
     else if ((xRxThread = sys_thread_new("eth_rx", eth_rx_thread_entry, NULL, RX_THREAD_STACKSIZE, RX_THREAD_PRIO)) == NULL)
     {
-        while (1);
+        printf("[ERROR] ethernetif: failed to create eth_rx task. FreeRTOS heap may be exhausted.\n");
+        sys_sem_free(&xRxSemaphore);
+        xRxSemaphore = NULL;
+        return ERR_MEM;
     }
 
-    sys_arch_sem_wait(&xRxSemaphore, 0);
+    printf("[INFO] ethernetif: waiting for eth_rx task startup...\n");
+    if (sys_arch_sem_wait(&xRxSemaphore, 2000) == SYS_ARCH_TIMEOUT)
+    {
+        printf("[ERROR] ethernetif: eth_rx task did not start within 2000 ms.\n");
+        vTaskDelete(xRxThread);
+        xRxThread = NULL;
+        sys_sem_free(&xRxSemaphore);
+        xRxSemaphore = NULL;
+        return ERR_TIMEOUT;
+    }
+    printf("[INFO] ethernetif: eth_rx task started.\n");
+
+    return ERR_OK;
 }
 
 // Implement NAPI
@@ -360,6 +379,7 @@ void ethernetif_loopback_input(struct pbuf *p)           // TODO: make sure pack
 err_t ethernetif_init(struct netif *netif)
 {
     struct ethernetif *ethernetif;
+    err_t err;
 
     LWIP_ASSERT("netif != NULL", (netif != NULL));
 
@@ -397,7 +417,13 @@ err_t ethernetif_init(struct netif *netif)
     ethernetif->ethaddr = (struct eth_addr *) & (netif->hwaddr[0]);
 
     /* initialize the hardware */
-    low_level_init(netif);
+    err = low_level_init(netif);
+    if (err != ERR_OK)
+    {
+        mem_free(ethernetif);
+        netif->state = NULL;
+        return err;
+    }
 
     return ERR_OK;
 }
