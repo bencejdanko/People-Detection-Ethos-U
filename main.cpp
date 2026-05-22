@@ -151,6 +151,7 @@ static void vUdpVideoReceiverTask(void *pvParameters)
     }
 
     LOG_INFO("UDP server listening on port %d...", UDP_STREAM_PORT);
+    LOG_INFO("UdpRecv stack high water mark: %u words remaining.", (unsigned int)uxTaskGetStackHighWaterMark(NULL));
 
     uint32_t activeFrameId = 0xFFFFFFFF;
     uint32_t accumulatedBytes = 0;
@@ -290,7 +291,8 @@ static void vInferenceTask(void *pvParameters)
     uint64_t lastTime = pmu_get_systick_Count();
     uint64_t currentFPS = 0;
 
-    LOG_INFO("Inference Engine started. Waiting for incoming network video feed...");
+    LOG_INFO("Inference Engine initialized. Stack high water mark: %u words remaining.", (unsigned int)uxTaskGetStackHighWaterMark(NULL));
+    LOG_INFO("Waiting for incoming network video feed...");
 
     while (1)
     {
@@ -426,11 +428,12 @@ static void vNetworkInitTask(void *pvParameters)
     LOG_INFO("  Default gateway: %s", ip4addr_ntoa(&g_netif.gw));
 
     // Spawn the high performance UDP Video Receiver thread
-    LOG_INFO("Spawning high-performance UDP Video Receiver Task (Stack: 1024 words, Priority: %d)...", tskIDLE_PRIORITY + 3UL);
-    xTaskCreate(vUdpVideoReceiverTask, "UdpRecv", 1024, NULL, tskIDLE_PRIORITY + 3UL, &xUdpReceiverTaskHandle);
+    LOG_INFO("Spawning UDP Video Receiver Task (Stack: 2048 words, Priority: %d)...", tskIDLE_PRIORITY + 3UL);
+    xTaskCreate(vUdpVideoReceiverTask, "UdpRecv", 2048, NULL, tskIDLE_PRIORITY + 3UL, &xUdpReceiverTaskHandle);
 
-    // Suspend network init task as it is no longer required
-    LOG_INFO("Network initialization complete. Suspending NetInit task.");
+    LOG_INFO("Network initialization complete.");
+    LOG_INFO("NetInit stack high water mark: %u words remaining.", (unsigned int)uxTaskGetStackHighWaterMark(NULL));
+    LOG_INFO("Suspending NetInit task.");
     vTaskSuspend(NULL);
 }
 
@@ -494,11 +497,11 @@ int main(void)
     LOG_INFO("----------------------------------------------------------------");
 
     // Create system coordinator tasks
-    LOG_INFO("Spawning NetworkInit FreeRTOS task (Stack: %d words, Priority: %d)...", TCPIP_THREAD_STACKSIZE, tskIDLE_PRIORITY + 4UL);
-    xTaskCreate(vNetworkInitTask, "NetInit", TCPIP_THREAD_STACKSIZE, NULL, tskIDLE_PRIORITY + 4UL, NULL);
+    LOG_INFO("Spawning NetworkInit FreeRTOS task (Stack: 2048 words, Priority: %d)...", tskIDLE_PRIORITY + 4UL);
+    xTaskCreate(vNetworkInitTask, "NetInit", 2048, NULL, tskIDLE_PRIORITY + 4UL, NULL);
     
-    LOG_INFO("Spawning ML Inference FreeRTOS task (Stack: 2048 words, Priority: %d)...", tskIDLE_PRIORITY + 2UL);
-    xTaskCreate(vInferenceTask, "Inference", 2048, NULL, tskIDLE_PRIORITY + 2UL, &xInferenceTaskHandle);
+    LOG_INFO("Spawning ML Inference FreeRTOS task (Stack: 4096 words, Priority: %d)...", tskIDLE_PRIORITY + 2UL);
+    xTaskCreate(vInferenceTask, "Inference", 4096, NULL, tskIDLE_PRIORITY + 2UL, &xInferenceTaskHandle);
 
     // Start FreeRTOS scheduler
     LOG_INFO("Starting FreeRTOS Task Scheduler...");
@@ -511,38 +514,79 @@ int main(void)
 /* --- FREERTOS HOOKS & DIAGNOSTIC FAULT HANDLERS --- */
 extern "C" {
 
-// C fault analyzer function
+// Crash-safe fault analyzer - reads SCB registers FIRST (no stack dependency)
 void HardFault_Handler_C(uint32_t *pulStackedRegisters)
 {
-    uint32_t r0  = pulStackedRegisters[0];
-    uint32_t r1  = pulStackedRegisters[1];
-    uint32_t r2  = pulStackedRegisters[2];
-    uint32_t r3  = pulStackedRegisters[3];
-    uint32_t r12 = pulStackedRegisters[4];
-    uint32_t lr  = pulStackedRegisters[5];
-    uint32_t pc  = pulStackedRegisters[6];
-    uint32_t psr = pulStackedRegisters[7];
+    // Read SCB fault registers immediately (memory-mapped, always accessible)
+    volatile uint32_t cfsr  = SCB->CFSR;
+    volatile uint32_t hfsr  = SCB->HFSR;
+    volatile uint32_t mmfar = SCB->MMFAR;
+    volatile uint32_t bfar  = SCB->BFAR;
 
     printf("\r\n==================================================\r\n");
-    printf("   🔥 HARDWARE FAULT DETECTED! 🔥\r\n");
-    printf("==================================================\r\n");
-    printf("Stacked CPU Registers:\r\n");
-    printf("  R0  = 0x%08X\r\n", r0);
-    printf("  R1  = 0x%08X\r\n", r1);
-    printf("  R2  = 0x%08X\r\n", r2);
-    printf("  R3  = 0x%08X\r\n", r3);
-    printf("  R12 = 0x%08X\r\n", r12);
-    printf("  LR  = 0x%08X (Return Address / Link Register)\r\n", lr);
-    printf("  PC  = 0x%08X (Faulting Instruction Address)\r\n", pc);
-    printf("  PSR = 0x%08X\r\n", psr);
-    printf("\r\nSystem Control Block Registers:\r\n");
-    printf("  CFSR  = 0x%08X\r\n", (unsigned int)SCB->CFSR);
-    printf("  HFSR  = 0x%08X\r\n", (unsigned int)SCB->HFSR);
-    printf("  MMFAR = 0x%08X (MemManage Fault Address)\r\n", (unsigned int)SCB->MMFAR);
-    printf("  BFAR  = 0x%08X (BusFault Address)\r\n", (unsigned int)SCB->BFAR);
+    printf("   HARDWARE FAULT DETECTED\r\n");
     printf("==================================================\r\n");
 
-    // Block forever to halt execution
+    // Decode CFSR fault type
+    printf("CFSR  = 0x%08X\r\n", (unsigned int)cfsr);
+    if (cfsr & 0xFF) {
+        printf("  >> MemManage Fault:\r\n");
+        if (cfsr & (1 << 0)) printf("     IACCVIOL  - Instruction access violation\r\n");
+        if (cfsr & (1 << 1)) printf("     DACCVIOL  - Data access violation\r\n");
+        if (cfsr & (1 << 3)) printf("     MUNSTKERR - Unstacking error\r\n");
+        if (cfsr & (1 << 4)) printf("     MSTKERR   - Stacking error (SP invalid)\r\n");
+        if (cfsr & (1 << 5)) printf("     MLSPERR   - FP lazy state error\r\n");
+        if (cfsr & (1 << 7)) printf("     MMARVALID - Faulting addr in MMFAR\r\n");
+    }
+    if (cfsr & 0xFF00) {
+        printf("  >> BusFault:\r\n");
+        if (cfsr & (1 << 8))  printf("     IBUSERR    - Instruction bus error\r\n");
+        if (cfsr & (1 << 9))  printf("     PRECISERR  - Precise data bus error\r\n");
+        if (cfsr & (1 << 10)) printf("     IMPRECISERR- Imprecise data bus error\r\n");
+        if (cfsr & (1 << 11)) printf("     UNSTKERR   - Unstacking bus error\r\n");
+        if (cfsr & (1 << 12)) printf("     STKERR     - Stacking bus error\r\n");
+        if (cfsr & (1 << 13)) printf("     LSPERR     - FP lazy stacking error\r\n");
+        if (cfsr & (1 << 15)) printf("     BFARVALID  - Faulting addr in BFAR\r\n");
+    }
+    if (cfsr & 0xFFFF0000) {
+        printf("  >> UsageFault:\r\n");
+        if (cfsr & (1 << 16)) printf("     UNDEFINSTR - Undefined instruction\r\n");
+        if (cfsr & (1 << 17)) printf("     INVSTATE   - Invalid EPSR state\r\n");
+        if (cfsr & (1 << 18)) printf("     INVPC      - Invalid EXC_RETURN\r\n");
+        if (cfsr & (1 << 19)) printf("     NOCP       - Coprocessor not enabled\r\n");
+        if (cfsr & (1 << 24)) printf("     UNALIGNED  - Unaligned access\r\n");
+        if (cfsr & (1 << 25)) printf("     DIVBYZERO  - Divide by zero\r\n");
+    }
+
+    printf("HFSR  = 0x%08X\r\n", (unsigned int)hfsr);
+    if (hfsr & (1 << 30)) printf("  >> FORCED - Escalated from configurable fault\r\n");
+    if (hfsr & (1 << 1))  printf("  >> VECTTBL - Vector table read fault\r\n");
+    printf("MMFAR = 0x%08X\r\n", (unsigned int)mmfar);
+    printf("BFAR  = 0x%08X\r\n", (unsigned int)bfar);
+
+    // Validate stack pointer before dereferencing
+    uint32_t sp = (uint32_t)pulStackedRegisters;
+    if ((sp >= 0x20000000) && (sp < 0x92000000) && ((sp & 0x3) == 0)) {
+        printf("\r\nStacked Registers (SP=0x%08X):\r\n", sp);
+        printf("  R0  = 0x%08X   R1  = 0x%08X\r\n", pulStackedRegisters[0], pulStackedRegisters[1]);
+        printf("  R2  = 0x%08X   R3  = 0x%08X\r\n", pulStackedRegisters[2], pulStackedRegisters[3]);
+        printf("  R12 = 0x%08X   LR  = 0x%08X\r\n", pulStackedRegisters[4], pulStackedRegisters[5]);
+        printf("  PC  = 0x%08X   PSR = 0x%08X\r\n", pulStackedRegisters[6], pulStackedRegisters[7]);
+    } else {
+        printf("\r\n  !! SP CORRUPTED: 0x%08X (not in valid RAM)\r\n", sp);
+        printf("  !! Cannot read stacked registers -- likely STACK OVERFLOW\r\n");
+    }
+
+    // Print active FreeRTOS task if scheduler is running
+    if (xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED) {
+        TaskHandle_t current = xTaskGetCurrentTaskHandle();
+        if (current != NULL) {
+            printf("  Active task: \"%s\"\r\n", pcTaskGetName(current));
+        }
+    }
+
+    printf("==================================================\r\n");
+    __BKPT(0);
     while (1);
 }
 
