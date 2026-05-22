@@ -436,6 +436,7 @@ static void vInferenceTask(void *pvParameters)
     uint32_t postMs = 0;
     uint32_t drawMs = 0;
     uint32_t lcdMs = 0;
+    uint32_t loopMs = 0;
 
     LOG_INFO("Inference Engine initialized. Stack high water mark: %u words remaining.", (unsigned int)uxTaskGetStackHighWaterMark(NULL));
     LOG_INFO("Waiting for incoming network video feed...");
@@ -444,6 +445,7 @@ static void vInferenceTask(void *pvParameters)
     {
         // Wait for UDP receiver to signal a complete frame
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+        uint64_t loopStart = pmu_get_systick_Count();
 
         // 1. Quantize the raw RGB pixels into the model input tensor (int8)
         uint64_t stageStart = pmu_get_systick_Count();
@@ -523,15 +525,19 @@ static void vInferenceTask(void *pvParameters)
 
         // Draw text overlay (FPS & count)
         char overlayText[64];
-        sprintf(overlayText, "FPS:%llu C:%d Q:%u I:%u P:%u D:%u L:%u",
+        sprintf(overlayText, "F%llu C%d T%u",
                 currentFPS,
                 (int)detections.size(),
+                (unsigned int)loopMs);
+        imlib_draw_string(&dstImg, 2, 2, overlayText, COLOR_R5_G6_B5_TO_RGB565(31, 31, 31), 1, 0, 0, false, false, false, false, 0, false, false);
+
+        sprintf(overlayText, "Q%u I%u P%u D%u L%u",
                 (unsigned int)quantMs,
                 (unsigned int)inferMs,
                 (unsigned int)postMs,
                 (unsigned int)drawMs,
                 (unsigned int)lcdMs);
-        imlib_draw_string(&dstImg, 10, 10, overlayText, COLOR_R5_G6_B5_TO_RGB565(31, 31, 31), 2, 0, 0, false, false, false, false, 0, false, false);
+        imlib_draw_string(&dstImg, 2, 14, overlayText, COLOR_R5_G6_B5_TO_RGB565(31, 31, 31), 1, 0, 0, false, false, false, false, 0, false, false);
         drawMs = CyclesToMs(pmu_get_systick_Count() - stageStart);
 
         // Blit to screen
@@ -542,6 +548,7 @@ static void vInferenceTask(void *pvParameters)
         stageStart = pmu_get_systick_Count();
         Display_FillRect((uint16_t *)dstImg.data, &sDispRect, 1);
         lcdMs = CyclesToMs(pmu_get_systick_Count() - stageStart);
+        loopMs = CyclesToMs(pmu_get_systick_Count() - loopStart);
 #endif
     }
 }
