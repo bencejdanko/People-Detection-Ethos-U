@@ -8,7 +8,6 @@
 // Avoid ISO C++17 'register' storage class specifier errors in old Nuvoton SDK headers
 #define register
 #include <cstdio>
-#include <vector>
 #include <cmath>
 #include <cstring>
 
@@ -403,7 +402,8 @@ static void vInferenceTask(void *pvParameters)
     arm::app::QuantParams inQuantParams = arm::app::GetTensorQuantParams(inputTensor);
     arm::app::QuantParams outQuantParams = arm::app::GetTensorQuantParams(outputTensor);
 
-    std::vector<arm::app::model::Detection> detections;
+    arm::app::model::Detection detections[MODEL_MAX_DETECTIONS] = {};
+    size_t detectionCount = 0;
     
     const bool useFastInputQuant =
         (IMAGE_CHANNELS == 3) &&
@@ -488,7 +488,9 @@ static void vInferenceTask(void *pvParameters)
             MODEL_MIN_PEAK_DISTANCE,
             outQuantParams.scale,
             outQuantParams.offset,
-            detections
+            detections,
+            MODEL_MAX_DETECTIONS,
+            detectionCount
         );
         postMs = CyclesToMs(pmu_get_systick_Count() - stageStart);
 
@@ -501,7 +503,7 @@ static void vInferenceTask(void *pvParameters)
             frameCount = 0;
             lastTime = now;
             
-            LOG_INFO("[STATUS] Real-time inference rate: %llu FPS | Active People: %d", currentFPS, (int)detections.size());
+            LOG_INFO("[STATUS] Real-time inference rate: %llu FPS | Active People: %d", currentFPS, (int)detectionCount);
         }
 
         // 5. Visual Rendering on LCD Panel (if enabled)
@@ -511,8 +513,9 @@ static void vInferenceTask(void *pvParameters)
         ConvertRgb888ToRgb565Frame(g_inferenceFrameBuffer, (uint16_t *)dstImg.data);
 
         // Draw crosshair indicators at each person peak
-        for (const auto& det : detections)
+        for (size_t i = 0; i < detectionCount; ++i)
         {
+            const arm::app::model::Detection& det = detections[i];
             int x_disp = static_cast<int>(det.x);
             int y_disp = static_cast<int>(det.y);
 
@@ -527,7 +530,7 @@ static void vInferenceTask(void *pvParameters)
         char overlayText[64];
         sprintf(overlayText, "F%llu C%d T%u",
                 currentFPS,
-                (int)detections.size(),
+                (int)detectionCount,
                 (unsigned int)loopMs);
         imlib_draw_string(&dstImg, 2, 2, overlayText, COLOR_R5_G6_B5_TO_RGB565(31, 31, 31), 1, 0, 0, false, false, false, false, 0, false, false);
 

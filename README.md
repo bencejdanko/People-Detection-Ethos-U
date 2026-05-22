@@ -62,3 +62,4 @@ Logging can be fully toggled or customized in `board_config.h`:
 [INFO] [STATUS] Real-time inference rate: 15 FPS | Active People: 2
 [INFO] [STATUS] Real-time inference rate: 15 FPS | Active People: 3
 ```
+

@@ -6,8 +6,6 @@
  * @copyright SPDX-License-Identifier: Apache-2.0
  ******************************************************************************/
 #include "PostProcessor.hpp"
-#include <algorithm>
-#include <cmath>
 
 namespace arm
 {
@@ -29,12 +27,13 @@ void PostProcessor::Process(const int8_t* outputData,
                                  float minDistance,
                                  float scale,
                                  int32_t zeroPoint,
-                                 std::vector<Detection>& results)
+                                 Detection* results,
+                                 size_t maxResults,
+                                 size_t& resultCount)
 {
-    results.clear();
-    std::vector<Detection> candidates;
+    resultCount = 0;
+    const float minDistanceSq = minDistance * minDistance;
 
-    /* 1. Extract peaks above threshold */
     for (int y = 0; y < m_gridHeight; ++y)
     {
         for (int x = 0; x < m_gridWidth; ++x)
@@ -58,37 +57,29 @@ void PostProcessor::Process(const int8_t* outputData,
                 // Coordinates in image space
                 candidate.x = (static_cast<float>(x) + 0.5f) * (static_cast<float>(m_inputWidth) / static_cast<float>(m_gridWidth));
                 candidate.y = (static_cast<float>(y) + 0.5f) * (static_cast<float>(m_inputHeight) / static_cast<float>(m_gridHeight));
-                
-                candidates.push_back(candidate);
+
+                bool merged = false;
+                for (size_t i = 0; i < resultCount; ++i)
+                {
+                    float dx = static_cast<float>(candidate.grid_x - results[i].grid_x);
+                    float dy = static_cast<float>(candidate.grid_y - results[i].grid_y);
+
+                    if ((dx * dx + dy * dy) < minDistanceSq)
+                    {
+                        if (candidate.score > results[i].score)
+                        {
+                            results[i] = candidate;
+                        }
+                        merged = true;
+                        break;
+                    }
+                }
+
+                if (!merged && resultCount < maxResults)
+                {
+                    results[resultCount++] = candidate;
+                }
             }
-        }
-    }
-
-    /* 2. Sort candidates by score descending */
-    std::sort(candidates.begin(), candidates.end(), [](const Detection& a, const Detection& b) {
-        return a.score > b.score;
-    });
-
-    /* 3. Non-Maximum Suppression (NMS) in grid space */
-    for (const auto& candidate : candidates)
-    {
-        bool tooClose = false;
-        for (const auto& accepted : results)
-        {
-            float dx = static_cast<float>(candidate.grid_x - accepted.grid_x);
-            float dy = static_cast<float>(candidate.grid_y - accepted.grid_y);
-            float distance = std::sqrt(dx * dx + dy * dy);
-
-            if (distance < minDistance)
-            {
-                tooClose = true;
-                break;
-            }
-        }
-
-        if (!tooClose)
-        {
-            results.push_back(candidate);
         }
     }
 }

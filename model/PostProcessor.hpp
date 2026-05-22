@@ -8,8 +8,8 @@
 #ifndef __POST_PROCESSOR_HPP__
 #define __POST_PROCESSOR_HPP__
 
-#include <vector>
 #include <cstdint>
+#include <stddef.h>
 
 namespace arm
 {
@@ -40,14 +40,18 @@ public:
      * @param minDistance Grid-space NMS threshold
      * @param scale Output tensor scale parameter
      * @param zeroPoint Output tensor zero-point parameter
-     * @param results Vector to populate with detections
+     * @param results Fixed-size detection buffer to populate
+     * @param maxResults Maximum number of detections that fit in results
+     * @param resultCount Number of detections written to results
      */
     void Process(const int8_t* outputData,
                  float threshold,
                  float minDistance,
                  float scale,
                  int32_t zeroPoint,
-                 std::vector<Detection>& results);
+                 Detection* results,
+                 size_t maxResults,
+                 size_t& resultCount);
 
 private:
     int m_inputWidth;

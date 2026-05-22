@@ -63,5 +63,6 @@
 /* Inference parameters */
 #define MODEL_DEFAULT_THRESHOLD    0.50f       // Detection confidence threshold
 #define MODEL_MIN_PEAK_DISTANCE    2.0f        // Grid-space NMS threshold (minimum distance between peaks)
+#define MODEL_MAX_DETECTIONS       32          // Fixed result capacity; avoids heap allocation in post-processing
 
 #endif // __BOARD_CONFIG_H__
