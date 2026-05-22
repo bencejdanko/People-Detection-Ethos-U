@@ -116,17 +116,17 @@ APP_IMAGE FLASH_START FLASH_SIZE
         ; Make sure reset_handler ends up in root segment
         startup_M55M1.o
         .ANY (+RO)
-		..\..\..\..\ThirdParty\tflite_micro\Lib\tflu.lib (.init_array)
+		C:\M55M1BSP\ThirdParty\tflite_micro\Lib\tflu.lib (.init_array)
 	}
 	rom_netwrok_executor +0
 	{
-		..\..\..\..\ThirdParty\tflite_micro\Lib\tflu.lib (+RO)
+		C:\M55M1BSP\ThirdParty\tflite_micro\Lib\tflu.lib (+RO)
 		ethosu_*.o
 	}
 
     ITCM ITCM_START ITCM_SIZE
     {
-        ..\..\..\..\ThirdParty\openmv\omv\Lib\omv.lib
+        C:\M55M1BSP\ThirdParty\openmv\omv\Lib\omv.lib
     }
 
 	; DTCM 128 KB shared with SRAM2

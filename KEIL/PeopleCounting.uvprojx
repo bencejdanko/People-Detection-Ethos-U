@@ -1,10 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no" ?>
 <Project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="project_projx.xsd">
-
   <SchemaVersion>2.1</SchemaVersion>
-
   <Header>### uVision Project, (C) Keil Software</Header>
-
   <Targets>
     <Target>
       <TargetName>ObjectDetection</TargetName>
@@ -19,28 +16,28 @@
           <PackID>Nuvoton.NuMicroM55_DFP.1.0.1</PackID>
           <PackURL>https://github.com/OpenNuvoton/cmsis-packs/raw/master/Nuvoton_DFP/</PackURL>
           <Cpu>IRAM(0x20100000,0x150000) IRAM2(0x30100000,0x150000) IROM(0x00100000,0x200000) IROM2(0x10100000,0x200000) CPUTYPE("Cortex-M55") FPU3(DFPU) DSP TZ MVE(FP) CLOCK(12000000) ESEL ELITTLE</Cpu>
-          <FlashUtilSpec></FlashUtilSpec>
-          <StartupFile></StartupFile>
+          <FlashUtilSpec />
+          <StartupFile />
           <FlashDriverDll>UL2V8M(-S0 -C0 -P0 -FD20000000 -FC8000 -FN2 -FF0M55M1_AP_2M -FS0100000 -FL0200000 -FF1M55M1_NS -FS110100000 -FL1200000 -FP0($$Device:M55M1H2LJAE$Flash\M55M1_AP_2M.FLM) -FP1($$Device:M55M1H2LJAE$Flash\M55M1_NS.FLM))</FlashDriverDll>
           <DeviceId>0</DeviceId>
           <RegisterFile>$$Device:M55M1H2LJAE$Device\M55M1\Include\M55M1.h</RegisterFile>
-          <MemoryEnv></MemoryEnv>
-          <Cmp></Cmp>
-          <Asm></Asm>
-          <Linker></Linker>
-          <OHString></OHString>
-          <InfinionOptionDll></InfinionOptionDll>
-          <SLE66CMisc></SLE66CMisc>
-          <SLE66AMisc></SLE66AMisc>
-          <SLE66LinkerMisc></SLE66LinkerMisc>
+          <MemoryEnv />
+          <Cmp />
+          <Asm />
+          <Linker />
+          <OHString />
+          <InfinionOptionDll />
+          <SLE66CMisc />
+          <SLE66AMisc />
+          <SLE66LinkerMisc />
           <SFDFile>$$Device:M55M1H2LJAE$SVD\Nuvoton\M55M1.svd</SFDFile>
           <bCustSvd>0</bCustSvd>
           <UseEnv>0</UseEnv>
-          <BinPath></BinPath>
-          <IncludePath></IncludePath>
-          <LibPath></LibPath>
-          <RegisterFilePath></RegisterFilePath>
-          <DBRegisterFilePath></DBRegisterFilePath>
+          <BinPath />
+          <IncludePath />
+          <LibPath />
+          <RegisterFilePath />
+          <DBRegisterFilePath />
           <TargetStatus>
             <Error>0</Error>
             <ExitCodeStop>0</ExitCodeStop>
@@ -62,8 +59,8 @@
           <BeforeCompile>
             <RunUserProg1>0</RunUserProg1>
             <RunUserProg2>0</RunUserProg2>
-            <UserProg1Name></UserProg1Name>
-            <UserProg2Name></UserProg2Name>
+            <UserProg1Name />
+            <UserProg2Name />
             <UserProg1Dos16Mode>0</UserProg1Dos16Mode>
             <UserProg2Dos16Mode>0</UserProg2Dos16Mode>
             <nStopU1X>0</nStopU1X>
@@ -72,8 +69,8 @@
           <BeforeMake>
             <RunUserProg1>0</RunUserProg1>
             <RunUserProg2>0</RunUserProg2>
-            <UserProg1Name></UserProg1Name>
-            <UserProg2Name></UserProg2Name>
+            <UserProg1Name />
+            <UserProg2Name />
             <UserProg1Dos16Mode>0</UserProg1Dos16Mode>
             <UserProg2Dos16Mode>0</UserProg2Dos16Mode>
             <nStopB1X>0</nStopB1X>
@@ -90,7 +87,7 @@
             <nStopA2X>0</nStopA2X>
           </AfterMake>
           <SelectedForBatchBuild>0</SelectedForBatchBuild>
-          <SVCSIdString></SVCSIdString>
+          <SVCSIdString />
         </TargetCommonOption>
         <CommonProperty>
           <UseCPPCompiler>0</UseCPPCompiler>
@@ -104,15 +101,15 @@
           <AssembleAssemblyFile>0</AssembleAssemblyFile>
           <PublicsOnly>0</PublicsOnly>
           <StopOnExitCode>3</StopOnExitCode>
-          <CustomArgument></CustomArgument>
-          <IncludeLibraryModules></IncludeLibraryModules>
+          <CustomArgument />
+          <IncludeLibraryModules />
           <ComprImg>1</ComprImg>
         </CommonProperty>
         <DllOption>
-          <SimDllName></SimDllName>
-          <SimDllArguments></SimDllArguments>
-          <SimDlgDll></SimDlgDll>
-          <SimDlgDllArguments></SimDlgDllArguments>
+          <SimDllName />
+          <SimDllArguments />
+          <SimDlgDll />
+          <SimDlgDllArguments />
           <TargetDllName>SARMV8M.DLL</TargetDllName>
           <TargetDllArguments> -MPU -MVE</TargetDllArguments>
           <TargetDlgDll>TCM.DLL</TargetDlgDll>
@@ -139,10 +136,10 @@
           <bUseTDR>1</bUseTDR>
           <Flash2>BIN\UL2V8M.DLL</Flash2>
           <Flash3>"" ()</Flash3>
-          <Flash4></Flash4>
-          <pFcarmOut></pFcarmOut>
-          <pFcarmGrp></pFcarmGrp>
-          <pFcArmRoot></pFcArmRoot>
+          <Flash4 />
+          <pFcarmOut />
+          <pFcarmGrp />
+          <pFcArmRoot />
           <FcArmLst>0</FcArmLst>
         </Utilities>
         <TargetArmAds>
@@ -175,7 +172,7 @@
             <RvctClst>1</RvctClst>
             <GenPPlst>1</GenPPlst>
             <AdsCpuType>"Cortex-M55"</AdsCpuType>
-            <RvctDeviceName></RvctDeviceName>
+            <RvctDeviceName />
             <mOS>0</mOS>
             <uocRom>0</uocRom>
             <uocRam>0</uocRam>
@@ -310,7 +307,7 @@
                 <Size>0x150000</Size>
               </OCR_RVCT10>
             </OnChipMemories>
-            <RvctStartVector></RvctStartVector>
+            <RvctStartVector />
           </ArmAdsMisc>
           <Cads>
             <interw>1</interw>
@@ -337,10 +334,10 @@
             <v6WtE>0</v6WtE>
             <v6Rtti>0</v6Rtti>
             <VariousControls>
-              <MiscControls></MiscControls>
+              <MiscControls />
               <Define>NVT_VECTOR_ON_FLASH, TF_LITE_STATIC_MEMORY, ARM_MATH_DSP, ARM_NPU, ACTIVATION_BUF_SZ=0x00100000</Define>
-              <Undefine></Undefine>
-              <IncludePath>C:\Library\CMSIS\Core\Include;C:\Library\Device\Nuvoton\M55M1\Include;C:\Library\CMSIS\DSP\Include;C:\Library\StdDriver\inc;C:\Library\StdDriver\inc\npu;C:\ThirdParty\openmv\omv\imlib;C:\ThirdParty\openmv\omv\alloc;C:\ThirdParty\openmv\omv\common;C:\ThirdParty\openmv\omv\Lib;C:\ThirdParty\tflite_micro;C:\ThirdParty\tflite_micro\_deps\tensorflow-flatbuffers-src\include;C:\ThirdParty\ml-embedded-evaluation-kit\source\application\api\common\include;C:\ThirdParty\ml-embedded-evaluation-kit\source\log\include;C:\ThirdParty\ml-embedded-evaluation-kit\source\math\include;C:\ThirdParty\ml-embedded-evaluation-kit\source\application\main\include;C:\ThirdParty\ml-embedded-evaluation-kit\source\profiler\include;..\Device\include;..\model;..\NPU\include;..\Pattern\include;..\ProfilerCounter\include;..;C:\ThirdParty\tflite_micro\_deps\tensorflow-gemlowp-src;C:\ThirdParty\FatFs\source</IncludePath>
+              <Undefine />
+              <IncludePath>C:\M55M1BSP\Library\CMSIS\Core\Include;C:\M55M1BSP\Library\Device\Nuvoton\M55M1\Include;C:\M55M1BSP\Library\CMSIS\DSP\Include;C:\M55M1BSP\Library\StdDriver\inc;C:\M55M1BSP\Library\StdDriver\inc\npu;C:\M55M1BSP\ThirdParty\openmv\omv\imlib;C:\M55M1BSP\ThirdParty\openmv\omv\alloc;C:\M55M1BSP\ThirdParty\openmv\omv\common;C:\M55M1BSP\ThirdParty\openmv\omv\Lib;C:\M55M1BSP\ThirdParty\tflite_micro;C:\M55M1BSP\ThirdParty\tflite_micro\_deps\tensorflow-flatbuffers-src\include;C:\M55M1BSP\ThirdParty\ml-embedded-evaluation-kit\source\application\api\common\include;C:\M55M1BSP\ThirdParty\ml-embedded-evaluation-kit\source\log\include;C:\M55M1BSP\ThirdParty\ml-embedded-evaluation-kit\source\math\include;C:\M55M1BSP\ThirdParty\ml-embedded-evaluation-kit\source\application\main\include;C:\M55M1BSP\ThirdParty\ml-embedded-evaluation-kit\source\profiler\include;..\Device\include;..\model;..\NPU\include;..\Pattern\include;..\ProfilerCounter\include;..;C:\M55M1BSP\ThirdParty\tflite_micro\_deps\tensorflow-gemlowp-src;C:\M55M1BSP\ThirdParty\FatFs\source;C:\M55M1BSP\ThirdParty\FreeRTOS\Source\include;C:\M55M1BSP\ThirdParty\FreeRTOS\Source\portable\GCC\ARM_CM55\non_secure;C:\M55M1BSP\ThirdParty\lwIP\src\include;C:\M55M1BSP\ThirdParty\lwIP\src\include\compat;C:\M55M1BSP\Library\StdDriver\inc\emac;..\Device\lwip_port\include;..\Device\lwip_port\drv_emac;..\Device\lwip_port\netif</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -355,10 +352,10 @@
             <useXO>0</useXO>
             <ClangAsOpt>2</ClangAsOpt>
             <VariousControls>
-              <MiscControls></MiscControls>
-              <Define></Define>
-              <Undefine></Undefine>
-              <IncludePath></IncludePath>
+              <MiscControls />
+              <Define />
+              <Undefine />
+              <IncludePath />
             </VariousControls>
           </Aads>
           <LDads>
@@ -368,14 +365,14 @@
             <noStLib>0</noStLib>
             <RepFail>1</RepFail>
             <useFile>0</useFile>
-            <TextAddressRange></TextAddressRange>
-            <DataAddressRange></DataAddressRange>
-            <pXoBase></pXoBase>
+            <TextAddressRange />
+            <DataAddressRange />
+            <pXoBase />
             <ScatterFile>.\M55M1.scatter</ScatterFile>
-            <IncludeLibs></IncludeLibs>
-            <IncludeLibsPath></IncludeLibsPath>
-            <Misc></Misc>
-            <LinkerInputFile></LinkerInputFile>
+            <IncludeLibs />
+            <IncludeLibsPath />
+            <Misc />
+            <LinkerInputFile />
             <DisabledWarnings>6314</DisabledWarnings>
           </LDads>
         </TargetArmAds>
@@ -385,14 +382,14 @@
           <GroupName>CMSIS</GroupName>
           <Files>
             <File>
-              <FileName>startup_M55M1.c</FileName>
+              <FileName>C:\M55M1BSP\Library\Device\Nuvoton\M55M1\Source\startup_M55M1.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\Library\Device\Nuvoton\M55M1\Source\startup_M55M1.c</FilePath>
+              <FilePath>C:\M55M1BSP\Library\Device\Nuvoton\M55M1\Source\startup_M55M1.c</FilePath>
             </File>
             <File>
-              <FileName>system_M55M1.c</FileName>
+              <FileName>C:\M55M1BSP\Library\Device\Nuvoton\M55M1\Source\system_M55M1.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\Library\Device\Nuvoton\M55M1\Source\system_M55M1.c</FilePath>
+              <FilePath>C:\M55M1BSP\Library\Device\Nuvoton\M55M1\Source\system_M55M1.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -400,79 +397,94 @@
           <GroupName>Driver</GroupName>
           <Files>
             <File>
-              <FileName>uart.c</FileName>
+              <FileName>C:\M55M1BSP\Library\StdDriver\src\uart.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\Library\StdDriver\src\uart.c</FilePath>
+              <FilePath>C:\M55M1BSP\Library\StdDriver\src\uart.c</FilePath>
             </File>
             <File>
-              <FileName>retarget.c</FileName>
+              <FileName>C:\M55M1BSP\Library\StdDriver\src\retarget.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\Library\StdDriver\src\retarget.c</FilePath>
+              <FilePath>C:\M55M1BSP\Library\StdDriver\src\retarget.c</FilePath>
             </File>
             <File>
-              <FileName>ccap.c</FileName>
+              <FileName>C:\M55M1BSP\Library\StdDriver\src\ccap.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\Library\StdDriver\src\ccap.c</FilePath>
+              <FilePath>C:\M55M1BSP\Library\StdDriver\src\ccap.c</FilePath>
             </File>
             <File>
-              <FileName>clk.c</FileName>
+              <FileName>C:\M55M1BSP\Library\StdDriver\src\clk.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\Library\StdDriver\src\clk.c</FilePath>
+              <FilePath>C:\M55M1BSP\Library\StdDriver\src\clk.c</FilePath>
             </File>
             <File>
-              <FileName>sys.c</FileName>
+              <FileName>C:\M55M1BSP\Library\StdDriver\src\sys.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\Library\StdDriver\src\sys.c</FilePath>
+              <FilePath>C:\M55M1BSP\Library\StdDriver\src\sys.c</FilePath>
             </File>
             <File>
-              <FileName>gpio.c</FileName>
+              <FileName>C:\M55M1BSP\Library\StdDriver\src\gpio.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\Library\StdDriver\src\gpio.c</FilePath>
+              <FilePath>C:\M55M1BSP\Library\StdDriver\src\gpio.c</FilePath>
             </File>
             <File>
-              <FileName>ethosu_device_u55_u65.c</FileName>
+              <FileName>C:\M55M1BSP\Library\StdDriver\src\npu\ethosu_device_u55_u65.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\Library\StdDriver\src\npu\ethosu_device_u55_u65.c</FilePath>
+              <FilePath>C:\M55M1BSP\Library\StdDriver\src\npu\ethosu_device_u55_u65.c</FilePath>
             </File>
             <File>
-              <FileName>ethosu_driver.c</FileName>
+              <FileName>C:\M55M1BSP\Library\StdDriver\src\npu\ethosu_driver.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\Library\StdDriver\src\npu\ethosu_driver.c</FilePath>
+              <FilePath>C:\M55M1BSP\Library\StdDriver\src\npu\ethosu_driver.c</FilePath>
             </File>
             <File>
-              <FileName>ethosu_pmu.c</FileName>
+              <FileName>C:\M55M1BSP\Library\StdDriver\src\npu\ethosu_pmu.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\Library\StdDriver\src\npu\ethosu_pmu.c</FilePath>
+              <FilePath>C:\M55M1BSP\Library\StdDriver\src\npu\ethosu_pmu.c</FilePath>
             </File>
             <File>
-              <FileName>ebi.c</FileName>
+              <FileName>C:\M55M1BSP\Library\StdDriver\src\ebi.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\Library\StdDriver\src\ebi.c</FilePath>
+              <FilePath>C:\M55M1BSP\Library\StdDriver\src\ebi.c</FilePath>
             </File>
             <File>
-              <FileName>spim_hyper.c</FileName>
+              <FileName>C:\M55M1BSP\Library\StdDriver\src\spim_hyper.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\Library\StdDriver\src\spim_hyper.c</FilePath>
+              <FilePath>C:\M55M1BSP\Library\StdDriver\src\spim_hyper.c</FilePath>
             </File>
             <File>
-              <FileName>sdh.c</FileName>
+              <FileName>C:\M55M1BSP\Library\StdDriver\src\sdh.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\Library\StdDriver\src\sdh.c</FilePath>
+              <FilePath>C:\M55M1BSP\Library\StdDriver\src\sdh.c</FilePath>
             </File>
             <File>
-              <FileName>spi.c</FileName>
+              <FileName>C:\M55M1BSP\Library\StdDriver\src\spi.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\Library\StdDriver\src\spi.c</FilePath>
+              <FilePath>C:\M55M1BSP\Library\StdDriver\src\spi.c</FilePath>
             </File>
             <File>
-              <FileName>hsusbd.c</FileName>
+              <FileName>C:\M55M1BSP\Library\StdDriver\src\hsusbd.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\Library\StdDriver\src\hsusbd.c</FilePath>
+              <FilePath>C:\M55M1BSP\Library\StdDriver\src\hsusbd.c</FilePath>
             </File>
             <File>
-              <FileName>pdma.c</FileName>
+              <FileName>C:\M55M1BSP\Library\StdDriver\src\pdma.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\Library\StdDriver\src\pdma.c</FilePath>
+              <FilePath>C:\M55M1BSP\Library\StdDriver\src\pdma.c</FilePath>
+            </File>
+            <File>
+              <FileName>C:\M55M1BSP\Library\StdDriver\src\emac\synopGMAC_Dev.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>C:\M55M1BSP\Library\StdDriver\src\emac\synopGMAC_Dev.c</FilePath>
+            </File>
+            <File>
+              <FileName>C:\M55M1BSP\Library\StdDriver\src\emac\synopGMAC_network_interface.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>C:\M55M1BSP\Library\StdDriver\src\emac\synopGMAC_network_interface.c</FilePath>
+            </File>
+            <File>
+              <FileName>C:\M55M1BSP\Library\StdDriver\src\emac\synopGMAC_plat.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>C:\M55M1BSP\Library\StdDriver\src\emac\synopGMAC_plat.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -480,27 +492,27 @@
           <GroupName>Application</GroupName>
           <Files>
             <File>
-              <FileName>BoardInit.cpp</FileName>
+              <FileName>..\BoardInit.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>..\BoardInit.cpp</FilePath>
             </File>
             <File>
-              <FileName>main.cpp</FileName>
+              <FileName>..\main.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>..\main.cpp</FilePath>
             </File>
             <File>
-              <FileName>mpu_config_M55M1.h</FileName>
+              <FileName>..\mpu_config_M55M1.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\mpu_config_M55M1.h</FilePath>
             </File>
             <File>
-              <FileName>ModelFileReader.c</FileName>
+              <FileName>..\ModelFileReader.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\ModelFileReader.c</FilePath>
             </File>
             <File>
-              <FileName>PostProcessor.cpp</FileName>
+              <FileName>..\model\PostProcessor.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>..\model\PostProcessor.cpp</FilePath>
             </File>
@@ -510,24 +522,24 @@
           <GroupName>Lib</GroupName>
           <Files>
             <File>
-              <FileName>cmsis_dsp.lib</FileName>
+              <FileName>C:\M55M1BSP\Library\CMSIS\Lib\KEIL\cmsis_dsp.lib</FileName>
               <FileType>4</FileType>
-              <FilePath>C:\Library\CMSIS\Lib\KEIL\cmsis_dsp.lib</FilePath>
+              <FilePath>C:\M55M1BSP\Library\CMSIS\Lib\KEIL\cmsis_dsp.lib</FilePath>
             </File>
             <File>
-              <FileName>tflu.lib</FileName>
+              <FileName>C:\M55M1BSP\ThirdParty\tflite_micro\Lib\tflu.lib</FileName>
               <FileType>4</FileType>
-              <FilePath>C:\ThirdParty\tflite_micro\Lib\tflu.lib</FilePath>
+              <FilePath>C:\M55M1BSP\ThirdParty\tflite_micro\Lib\tflu.lib</FilePath>
             </File>
             <File>
-              <FileName>cmsis_nn.lib</FileName>
+              <FileName>C:\M55M1BSP\Library\CMSIS\Lib\KEIL\cmsis_nn.lib</FileName>
               <FileType>4</FileType>
-              <FilePath>C:\Library\CMSIS\Lib\KEIL\cmsis_nn.lib</FilePath>
+              <FilePath>C:\M55M1BSP\Library\CMSIS\Lib\KEIL\cmsis_nn.lib</FilePath>
             </File>
             <File>
-              <FileName>omv.lib</FileName>
+              <FileName>C:\M55M1BSP\ThirdParty\openmv\omv\Lib\omv.lib</FileName>
               <FileType>4</FileType>
-              <FilePath>C:\ThirdParty\openmv\omv\Lib\omv.lib</FilePath>
+              <FilePath>C:\M55M1BSP\ThirdParty\openmv\omv\Lib\omv.lib</FilePath>
             </File>
           </Files>
         </Group>
@@ -535,14 +547,9 @@
           <GroupName>Model</GroupName>
           <Files>
             <File>
-              <FileName>InferenceModel.cpp</FileName>
+              <FileName>..\model\InferenceModel.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>..\model\InferenceModel.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>Labels.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\Model\Labels.cpp</FilePath>
             </File>
           </Files>
         </Group>
@@ -550,24 +557,24 @@
           <GroupName>ArmMLApi</GroupName>
           <Files>
             <File>
-              <FileName>Model.cc</FileName>
+              <FileName>C:\M55M1BSP\ThirdParty\ml-embedded-evaluation-kit\source\application\api\common\source\Model.cc</FileName>
               <FileType>8</FileType>
-              <FilePath>C:\ThirdParty\ml-embedded-evaluation-kit\source\application\api\common\source\Model.cc</FilePath>
+              <FilePath>C:\M55M1BSP\ThirdParty\ml-embedded-evaluation-kit\source\application\api\common\source\Model.cc</FilePath>
             </File>
             <File>
-              <FileName>TensorFlowLiteMicro.cc</FileName>
+              <FileName>C:\M55M1BSP\ThirdParty\ml-embedded-evaluation-kit\source\application\api\common\source\TensorFlowLiteMicro.cc</FileName>
               <FileType>8</FileType>
-              <FilePath>C:\ThirdParty\ml-embedded-evaluation-kit\source\application\api\common\source\TensorFlowLiteMicro.cc</FilePath>
+              <FilePath>C:\M55M1BSP\ThirdParty\ml-embedded-evaluation-kit\source\application\api\common\source\TensorFlowLiteMicro.cc</FilePath>
             </File>
             <File>
-              <FileName>PlatformMath.cc</FileName>
+              <FileName>C:\M55M1BSP\ThirdParty\ml-embedded-evaluation-kit\source\math\PlatformMath.cc</FileName>
               <FileType>8</FileType>
-              <FilePath>C:\ThirdParty\ml-embedded-evaluation-kit\source\math\PlatformMath.cc</FilePath>
+              <FilePath>C:\M55M1BSP\ThirdParty\ml-embedded-evaluation-kit\source\math\PlatformMath.cc</FilePath>
             </File>
             <File>
-              <FileName>Profiler.cc</FileName>
+              <FileName>C:\M55M1BSP\ThirdParty\ml-embedded-evaluation-kit\source\profiler\Profiler.cc</FileName>
               <FileType>8</FileType>
-              <FilePath>C:\ThirdParty\ml-embedded-evaluation-kit\source\profiler\Profiler.cc</FilePath>
+              <FilePath>C:\M55M1BSP\ThirdParty\ml-embedded-evaluation-kit\source\profiler\Profiler.cc</FilePath>
             </File>
           </Files>
         </Group>
@@ -575,17 +582,17 @@
           <GroupName>NPU</GroupName>
           <Files>
             <File>
-              <FileName>ethosu_cpu_cache.c</FileName>
+              <FileName>..\NPU\ethosu_cpu_cache.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\NPU\ethosu_cpu_cache.c</FilePath>
             </File>
             <File>
-              <FileName>ethosu_npu_init.c</FileName>
+              <FileName>..\NPU\ethosu_npu_init.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\NPU\ethosu_npu_init.c</FilePath>
             </File>
             <File>
-              <FileName>ethosu_profiler.c</FileName>
+              <FileName>..\NPU\ethosu_profiler.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\NPU\ethosu_profiler.c</FilePath>
             </File>
@@ -595,7 +602,7 @@
           <GroupName>ProfilerCounter</GroupName>
           <Files>
             <File>
-              <FileName>pmu_counter.c</FileName>
+              <FileName>..\ProfilerCounter\pmu_counter.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\ProfilerCounter\pmu_counter.c</FilePath>
             </File>
@@ -605,74 +612,74 @@
           <GroupName>Device</GroupName>
           <Files>
             <File>
-              <FileName>ImageSensor.c</FileName>
+              <FileName>..\Device\ImageSensor\ImageSensor.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Device\ImageSensor\ImageSensor.c</FilePath>
             </File>
             <File>
-              <FileName>Sensor_HM1055.c</FileName>
+              <FileName>..\Device\ImageSensor\Sensor\Sensor_HM1055.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Device\ImageSensor\Sensor\Sensor_HM1055.c</FilePath>
             </File>
             <File>
-              <FileName>SWI2C.c</FileName>
+              <FileName>..\Device\ImageSensor\Sensor\SWI2C.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Device\ImageSensor\Sensor\SWI2C.c</FilePath>
             </File>
             <File>
-              <FileName>Display.c</FileName>
+              <FileName>..\Device\Display\Display.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Device\Display\Display.c</FilePath>
             </File>
             <File>
-              <FileName>LCD_FSA506.c</FileName>
+              <FileName>..\Device\Display\LCD\LCD_FSA506.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Device\Display\LCD\LCD_FSA506.c</FilePath>
             </File>
             <File>
-              <FileName>Font8_16.c</FileName>
+              <FileName>..\Device\Display\Font8_16.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Device\Display\Font8_16.c</FilePath>
             </File>
             <File>
-              <FileName>hyperram_code.c</FileName>
+              <FileName>..\Device\HyperRAM\hyperram_code.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Device\HyperRAM\hyperram_code.c</FilePath>
             </File>
             <File>
-              <FileName>sdglue.c</FileName>
+              <FileName>..\Device\SDCard\sdglue.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Device\SDCard\sdglue.c</FilePath>
             </File>
             <File>
-              <FileName>LCD_ILI9341.c</FileName>
+              <FileName>..\Device\Display\LCD\LCD_ILI9341.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Device\Display\LCD\LCD_ILI9341.c</FilePath>
             </File>
             <File>
-              <FileName>descriptors.c</FileName>
+              <FileName>..\Device\UVC\descriptors.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Device\UVC\descriptors.c</FilePath>
             </File>
             <File>
-              <FileName>UVC.c</FileName>
+              <FileName>..\Device\UVC\UVC.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Device\UVC\UVC.c</FilePath>
             </File>
             <File>
-              <FileName>LCD_LT7381.c</FileName>
+              <FileName>..\Device\Display\LCD\LCD_LT7381.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Device\Display\LCD\LCD_LT7381.c</FilePath>
             </File>
             <File>
-              <FileName>drv_pdma.c</FileName>
+              <FileName>..\Device\Display\drv_pdma.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Device\Display\drv_pdma.c</FilePath>
             </File>
             <File>
-              <FileName>diskio_SDH.c</FileName>
+              <FileName>C:\M55M1BSP\Library\Storage\diskio_SDH.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\Library\Storage\diskio_SDH.c</FilePath>
+              <FilePath>C:\M55M1BSP\Library\Storage\diskio_SDH.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -680,14 +687,14 @@
           <GroupName>FatFS</GroupName>
           <Files>
             <File>
-              <FileName>ff.c</FileName>
+              <FileName>C:\M55M1BSP\ThirdParty\FatFs\source\ff.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\ThirdParty\FatFs\source\ff.c</FilePath>
+              <FilePath>C:\M55M1BSP\ThirdParty\FatFs\source\ff.c</FilePath>
             </File>
             <File>
-              <FileName>ffunicode.c</FileName>
+              <FileName>C:\M55M1BSP\ThirdParty\FatFs\source\ffunicode.c</FileName>
               <FileType>1</FileType>
-              <FilePath>C:\ThirdParty\FatFs\source\ffunicode.c</FilePath>
+              <FilePath>C:\M55M1BSP\ThirdParty\FatFs\source\ffunicode.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -695,75 +702,323 @@
           <GroupName>Pattern</GroupName>
           <Files>
             <File>
-              <FileName>car.cpp</FileName>
+              <FileName>..\Pattern\car.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>..\Pattern\car.cpp</FilePath>
             </File>
             <File>
-              <FileName>dinner.cpp</FileName>
+              <FileName>..\Pattern\dinner.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>..\Pattern\dinner.cpp</FilePath>
             </File>
             <File>
-              <FileName>InputFiles.cpp</FileName>
+              <FileName>..\Pattern\InputFiles.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>..\Pattern\InputFiles.cpp</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>FreeRTOS</GroupName>
+          <Files>
+            <File>
+              <FileName>C:\M55M1BSP\ThirdParty\FreeRTOS\Source\tasks.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>C:\M55M1BSP\ThirdParty\FreeRTOS\Source\tasks.c</FilePath>
+            </File>
+            <File>
+              <FileName>C:\M55M1BSP\ThirdParty\FreeRTOS\Source\queue.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>C:\M55M1BSP\ThirdParty\FreeRTOS\Source\queue.c</FilePath>
+            </File>
+            <File>
+              <FileName>C:\M55M1BSP\ThirdParty\FreeRTOS\Source\list.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>C:\M55M1BSP\ThirdParty\FreeRTOS\Source\list.c</FilePath>
+            </File>
+            <File>
+              <FileName>C:\M55M1BSP\ThirdParty\FreeRTOS\Source\timers.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>C:\M55M1BSP\ThirdParty\FreeRTOS\Source\timers.c</FilePath>
+            </File>
+            <File>
+              <FileName>C:\M55M1BSP\ThirdParty\FreeRTOS\Source\event_groups.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>C:\M55M1BSP\ThirdParty\FreeRTOS\Source\event_groups.c</FilePath>
+            </File>
+            <File>
+              <FileName>C:\M55M1BSP\ThirdParty\FreeRTOS\Source\portable\GCC\ARM_CM55\non_secure\port.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>C:\M55M1BSP\ThirdParty\FreeRTOS\Source\portable\GCC\ARM_CM55\non_secure\port.c</FilePath>
+            </File>
+            <File>
+              <FileName>C:\M55M1BSP\ThirdParty\FreeRTOS\Source\portable\GCC\ARM_CM55\non_secure\portasm.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>C:\M55M1BSP\ThirdParty\FreeRTOS\Source\portable\GCC\ARM_CM55\non_secure\portasm.c</FilePath>
+            </File>
+            <File>
+              <FileName>C:\M55M1BSP\ThirdParty\FreeRTOS\Source\portable\MemMang\heap_4.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>C:\M55M1BSP\ThirdParty\FreeRTOS\Source\portable\MemMang\heap_4.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>LwIP</GroupName>
+          <Files>
+            <File>
+              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\core\init.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\core\init.c</FilePath>
+            </File>
+            <File>
+              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\core\def.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\core\def.c</FilePath>
+            </File>
+            <File>
+              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\core\dns.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\core\dns.c</FilePath>
+            </File>
+            <File>
+              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\core\inet_chksum.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\core\inet_chksum.c</FilePath>
+            </File>
+            <File>
+              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\core\ip.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\core\ip.c</FilePath>
+            </File>
+            <File>
+              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\core\mem.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\core\mem.c</FilePath>
+            </File>
+            <File>
+              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\core\memp.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\core\memp.c</FilePath>
+            </File>
+            <File>
+              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\core\netif.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\core\netif.c</FilePath>
+            </File>
+            <File>
+              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\core\pbuf.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\core\pbuf.c</FilePath>
+            </File>
+            <File>
+              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\core\raw.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\core\raw.c</FilePath>
+            </File>
+            <File>
+              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\core\stats.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\core\stats.c</FilePath>
+            </File>
+            <File>
+              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\core\sys_lwip.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\core\sys_lwip.c</FilePath>
+            </File>
+            <File>
+              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\core\tcp.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\core\tcp.c</FilePath>
+            </File>
+            <File>
+              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\core\tcp_in.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\core\tcp_in.c</FilePath>
+            </File>
+            <File>
+              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\core\tcp_out.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\core\tcp_out.c</FilePath>
+            </File>
+            <File>
+              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\core\timeouts.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\core\timeouts.c</FilePath>
+            </File>
+            <File>
+              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\core\udp.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\core\udp.c</FilePath>
+            </File>
+            <File>
+              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\core\ipv4\autoip.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\core\ipv4\autoip.c</FilePath>
+            </File>
+            <File>
+              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\core\ipv4\dhcp.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\core\ipv4\dhcp.c</FilePath>
+            </File>
+            <File>
+              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\core\ipv4\etharp.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\core\ipv4\etharp.c</FilePath>
+            </File>
+            <File>
+              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\core\ipv4\icmp.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\core\ipv4\icmp.c</FilePath>
+            </File>
+            <File>
+              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\core\ipv4\igmp.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\core\ipv4\igmp.c</FilePath>
+            </File>
+            <File>
+              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\core\ipv4\ip4.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\core\ipv4\ip4.c</FilePath>
+            </File>
+            <File>
+              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\core\ipv4\ip4_addr.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\core\ipv4\ip4_addr.c</FilePath>
+            </File>
+            <File>
+              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\core\ipv4\ip4_frag.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\core\ipv4\ip4_frag.c</FilePath>
+            </File>
+            <File>
+              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\api\api_lib.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\api\api_lib.c</FilePath>
+            </File>
+            <File>
+              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\api\api_msg.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\api\api_msg.c</FilePath>
+            </File>
+            <File>
+              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\api\err.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\api\err.c</FilePath>
+            </File>
+            <File>
+              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\api\if_api.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\api\if_api.c</FilePath>
+            </File>
+            <File>
+              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\api\netbuf.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\api\netbuf.c</FilePath>
+            </File>
+            <File>
+              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\api\netdb.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\api\netdb.c</FilePath>
+            </File>
+            <File>
+              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\api\netifapi.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\api\netifapi.c</FilePath>
+            </File>
+            <File>
+              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\api\sockets.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\api\sockets.c</FilePath>
+            </File>
+            <File>
+              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\api\tcpip.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\api\tcpip.c</FilePath>
+            </File>
+            <File>
+              <FileName>C:\M55M1BSP\ThirdParty\lwIP\src\netif\ethernet.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>C:\M55M1BSP\ThirdParty\lwIP\src\netif\ethernet.c</FilePath>
+            </File>
+            <File>
+              <FileName>..\Device\lwip_port\sys_arch.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Device\lwip_port\sys_arch.c</FilePath>
+            </File>
+            <File>
+              <FileName>..\Device\lwip_port\netif\ethernetif.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Device\lwip_port\netif\ethernetif.c</FilePath>
+            </File>
+            <File>
+              <FileName>..\Device\lwip_port\drv_emac\emac.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Device\lwip_port\drv_emac\emac.c</FilePath>
+            </File>
+            <File>
+              <FileName>..\Device\lwip_port\drv_emac\mii.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Device\lwip_port\drv_emac\mii.c</FilePath>
+            </File>
+            <File>
+              <FileName>..\Device\lwip_port\time_stamp.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Device\lwip_port\time_stamp.c</FilePath>
             </File>
           </Files>
         </Group>
       </Groups>
     </Target>
   </Targets>
-
   <RTE>
-    <apis/>
-    <components/>
+    <apis />
+    <components />
     <files>
       <file attr="config" category="source" name="CMSIS\RTOS2\RTX\Config\RTX_Config.c" version="5.1.0">
         <instance index="0" removed="1">RTE\CMSIS\RTX_Config.c</instance>
-        <component Capiversion="2.1.3" Cclass="CMSIS" Cgroup="RTOS2" Csub="Keil RTX5" Cvariant="Library" Cvendor="ARM" Cversion="5.5.2" condition="RTOS2 RTX5"/>
-        <package name="CMSIS" schemaVersion="1.3" url="http://www.keil.com/pack/" vendor="ARM" version="5.7.0-rc1"/>
-        <targetInfos/>
+        <component Capiversion="2.1.3" Cclass="CMSIS" Cgroup="RTOS2" Csub="Keil RTX5" Cvariant="Library" Cvendor="ARM" Cversion="5.5.2" condition="RTOS2 RTX5" />
+        <package name="CMSIS" schemaVersion="1.3" url="http://www.keil.com/pack/" vendor="ARM" version="5.7.0-rc1" />
+        <targetInfos />
       </file>
       <file attr="config" category="header" name="CMSIS\RTOS2\RTX\Config\RTX_Config.h" version="5.5.1">
         <instance index="0" removed="1">RTE\CMSIS\RTX_Config.h</instance>
-        <component Capiversion="2.1.3" Cclass="CMSIS" Cgroup="RTOS2" Csub="Keil RTX5" Cvariant="Library" Cvendor="ARM" Cversion="5.5.2" condition="RTOS2 RTX5"/>
-        <package name="CMSIS" schemaVersion="1.3" url="http://www.keil.com/pack/" vendor="ARM" version="5.7.0-rc1"/>
-        <targetInfos/>
+        <component Capiversion="2.1.3" Cclass="CMSIS" Cgroup="RTOS2" Csub="Keil RTX5" Cvariant="Library" Cvendor="ARM" Cversion="5.5.2" condition="RTOS2 RTX5" />
+        <package name="CMSIS" schemaVersion="1.3" url="http://www.keil.com/pack/" vendor="ARM" version="5.7.0-rc1" />
+        <targetInfos />
       </file>
       <file attr="config" category="header" name="Config\EventRecorderConf.h" version="1.1.0">
         <instance index="0" removed="1">RTE\Compiler\EventRecorderConf.h</instance>
-        <component Cbundle="ARM Compiler" Cclass="Compiler" Cgroup="Event Recorder" Cvariant="DAP" Cvendor="Keil" Cversion="1.4.0" condition="Cortex-M Device"/>
-        <package name="ARM_Compiler" schemaVersion="1.6.3" url="http://www.keil.com/pack/" vendor="Keil" version="1.6.3"/>
-        <targetInfos/>
+        <component Cbundle="ARM Compiler" Cclass="Compiler" Cgroup="Event Recorder" Cvariant="DAP" Cvendor="Keil" Cversion="1.4.0" condition="Cortex-M Device" />
+        <package name="ARM_Compiler" schemaVersion="1.6.3" url="http://www.keil.com/pack/" vendor="Keil" version="1.6.3" />
+        <targetInfos />
       </file>
       <file attr="config" category="linkerScript" condition="TZ Non-secure ARMCC6" name="Device\ARM\ARMCM55\Source\ARM\ARMCM55_ac6.sct" version="1.1.0">
         <instance index="0" removed="1">RTE\Device\ARMCM55\ARMCM55_ac6.sct</instance>
-        <component Cclass="Device" Cgroup="Startup" Cvariant="C Startup" Cvendor="ARM" Cversion="1.1.0" condition="ARMCM55 CMSIS" isDefaultVariant="1"/>
-        <package name="CMSIS" schemaVersion="1.3" url="http://www.keil.com/pack/" vendor="ARM" version="5.8.0"/>
-        <targetInfos/>
+        <component Cclass="Device" Cgroup="Startup" Cvariant="C Startup" Cvendor="ARM" Cversion="1.1.0" condition="ARMCM55 CMSIS" isDefaultVariant="1" />
+        <package name="CMSIS" schemaVersion="1.3" url="http://www.keil.com/pack/" vendor="ARM" version="5.8.0" />
+        <targetInfos />
       </file>
       <file attr="config" category="header" condition="TZ Secure" name="Device\ARM\ARMCM55\Include\Template\partition_ARMCM55.h" version="1.0.0">
         <instance index="0" removed="1">RTE\Device\ARMCM55\partition_ARMCM55.h</instance>
-        <component Cclass="Device" Cgroup="Startup" Cvariant="C Startup" Cvendor="ARM" Cversion="1.0.0" condition="ARMCM55 CMSIS"/>
-        <package name="CMSIS" schemaVersion="1.3" url="http://www.keil.com/pack/" vendor="ARM" version="5.7.0"/>
-        <targetInfos/>
+        <component Cclass="Device" Cgroup="Startup" Cvariant="C Startup" Cvendor="ARM" Cversion="1.0.0" condition="ARMCM55 CMSIS" />
+        <package name="CMSIS" schemaVersion="1.3" url="http://www.keil.com/pack/" vendor="ARM" version="5.7.0" />
+        <targetInfos />
       </file>
       <file attr="config" category="sourceC" name="Device\ARM\ARMCM55\Source\startup_ARMCM55.c" version="1.1.0">
         <instance index="0" removed="1">RTE\Device\ARMCM55\startup_ARMCM55.c</instance>
-        <component Cclass="Device" Cgroup="Startup" Cvariant="C Startup" Cvendor="ARM" Cversion="1.1.0" condition="ARMCM55 CMSIS" isDefaultVariant="1"/>
-        <package name="CMSIS" schemaVersion="1.3" url="http://www.keil.com/pack/" vendor="ARM" version="5.8.0"/>
-        <targetInfos/>
+        <component Cclass="Device" Cgroup="Startup" Cvariant="C Startup" Cvendor="ARM" Cversion="1.1.0" condition="ARMCM55 CMSIS" isDefaultVariant="1" />
+        <package name="CMSIS" schemaVersion="1.3" url="http://www.keil.com/pack/" vendor="ARM" version="5.8.0" />
+        <targetInfos />
       </file>
       <file attr="config" category="sourceC" name="Device\ARM\ARMCM55\Source\system_ARMCM55.c" version="1.0.1">
         <instance index="0" removed="1">RTE\Device\ARMCM55\system_ARMCM55.c</instance>
-        <component Cclass="Device" Cgroup="Startup" Cvariant="C Startup" Cvendor="ARM" Cversion="1.1.0" condition="ARMCM55 CMSIS" isDefaultVariant="1"/>
-        <package name="CMSIS" schemaVersion="1.3" url="http://www.keil.com/pack/" vendor="ARM" version="5.8.0"/>
-        <targetInfos/>
+        <component Cclass="Device" Cgroup="Startup" Cvariant="C Startup" Cvendor="ARM" Cversion="1.1.0" condition="ARMCM55 CMSIS" isDefaultVariant="1" />
+        <package name="CMSIS" schemaVersion="1.3" url="http://www.keil.com/pack/" vendor="ARM" version="5.8.0" />
+        <targetInfos />
       </file>
     </files>
   </RTE>
-
   <LayerInfo>
     <Layers>
       <Layer>
@@ -772,5 +1027,4 @@
       </Layer>
     </Layers>
   </LayerInfo>
-
 </Project>

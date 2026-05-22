@@ -12,22 +12,15 @@ To compile this project, you need the official Nuvoton M55M1 Board Support Packa
    Clone the repository to an accessible location on your machine (e.g., `C:\M55M1BSP`):
    ```cmd
    git clone https://github.com/OpenNuvoton/M55M1BSP.git C:\M55M1BSP
-   ```
 
-2. Configure the Project Paths:
-   Use the `configure_paths.py` utility to dynamically map your project files to the newly cloned BSP directories:
-   ```bash
-   python3 configure_paths.py --library "C:\M55M1BSP\Library" --thirdparty "C:\M55M1BSP\ThirdParty"
-   ```
-
-3. Prepare Model Weights:
+2. Prepare Model Weights:
    Download the pre-trained FOMO model weights:
    * [Download pre-trained weights (APGL 3.0)](https://huggingface.co/bdanko/fomo-overhead-people-counting/resolve/main/model_192x192_ethos_u55_int8.tflite?download=true)
    
    Place the downloaded `.tflite` file at the root of this repository and rename it to `model.tflite`.
 
-4. Build and Flash:
-   Install the [Arm CMSIS Solution](https://marketplace.visualstudio.com/items?itemName=Arm.cmsis-csolution). Open the `KEIL/` directory and select `Build solution` and `Load and run application`.
+3. Build and Flash:
+   Open the `KEIL/` directory to build the package.
 
 ### Running the Streamer
 
@@ -40,23 +33,6 @@ Or stream a video file:
 ```bash
 python3 stream_udp.py --ip 192.168.1.10 --port 5005 --source "path/to/elevator_feed.mp4" --fps 15
 ```
-
----
-
-## Repository Structure & Key Locations
-
-The project resources are organized at the root of the workspace:
-
-* `board_config.h`: Central configuration header. Controls Static IP, Port, Logging, and thresholds.
-* `main.cpp`: Application entry and scheduler coordinator. Drives the UDP receiver and inference tasks.
-* `BoardInit.cpp`: Clock and peripheral initialization. Sets up system clocks, Ethernet RMII, NPU, and HyperRAM.
-* `model/`: Directory containing deep learning operations (model resolvers and post-processing).
-* `model/PostProcessor.cpp`: C++ post-processor handling grid scanning, dequantization, and Euclidean NMS.
-* `model/InferenceModel.cpp`: TFLite Micro model resolver for NPU and fallback operators.
-* `stream_udp.py`: PC Host video streamer.
-* `configure_paths.py`: Project path configurator for Keil/CMSIS.
-* `KEIL/`: Directory containing Keil MDK configuration files and scatter maps.
-
 ---
 
 ## Logging & Serial Communication
