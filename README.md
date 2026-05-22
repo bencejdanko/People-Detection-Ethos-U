@@ -14,7 +14,7 @@
 
 2. Prepare Model Weights:
    Download the pre-trained FOMO model weights:
-   * [Download pre-trained weights (APGL 3.0)](https://huggingface.co/bdanko/fomo-overhead-people-counting/resolve/main/model_192x192_ethos_u55_int8.tflite?download=true)
+   * [Download pre-trained weights (APGL 3.0)](https://huggingface.co/bdanko/fomo-overhead-people-counting/resolve/main/model_192x192_ethos_u55_int8_vela.tflite?download=true)
    
    Place the downloaded `.tflite` file at the root of this repository and rename it to `model.tflite`.
 
