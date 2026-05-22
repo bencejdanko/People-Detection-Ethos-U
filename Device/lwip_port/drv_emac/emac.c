@@ -239,7 +239,10 @@ NVT_ITCM void EMAC0_IRQHandler(void)
             }
         }
 
-        xSemaphoreGiveFromISR(xRxSemaphore, &xHigherPriorityTaskWoken);
+        if (xRxSemaphore != NULL)
+        {
+            xSemaphoreGiveFromISR(xRxSemaphore, &xHigherPriorityTaskWoken);
+        }
     }
 
     if (interrupt & synopGMACDmaRxStopped)

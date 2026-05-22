@@ -21,7 +21,7 @@ CHUNK_SIZE = 1024      # Size of the payload chunk in bytes
 IMAGE_W = 192
 IMAGE_H = 192
 
-def stream_video(target_ip, target_port, source, fps, channels=3):
+def stream_video(target_ip, target_port, source, fps, channels=3, chunk_delay=0.0005):
     # Create UDP socket
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     
@@ -93,6 +93,8 @@ def stream_video(target_ip, target_port, source, fps, channels=3):
                 
                 # Send header + payload chunk
                 sock.sendto(header + chunk_payload, (target_ip, target_port))
+                if chunk_delay > 0:
+                    time.sleep(chunk_delay)
             
             frame_id += 1
             
@@ -122,6 +124,7 @@ if __name__ == "__main__":
     parser.add_argument("--source", type=str, default="0", help="Webcam ID (e.g. '0') or path to video file")
     parser.add_argument("--fps", type=int, default=15, help="Frames per second to stream")
     parser.add_argument("--channels", type=int, default=3, choices=[1, 3], help="Number of image channels: 1 (Grayscale), 3 (RGB)")
+    parser.add_argument("--chunk-delay", type=float, default=0.0005, help="Delay between UDP chunks in seconds; use 0 to disable pacing")
     
     args = parser.parse_args()
-    stream_video(args.ip, args.port, args.source, args.fps, args.channels)
+    stream_video(args.ip, args.port, args.source, args.fps, args.channels, args.chunk_delay)

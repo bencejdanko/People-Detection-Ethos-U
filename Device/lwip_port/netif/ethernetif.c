@@ -84,6 +84,7 @@ struct ethernetif
  *        for this ethernetif
  */
 sys_sem_t xRxSemaphore = NULL;
+static sys_sem_t xRxStartupSemaphore = NULL;
 sys_thread_t xRxThread = NULL;
 static void eth_rx_thread_entry(void *parameter);
 void ethernetif_input(u16_t len, u8_t *buf, u32_t s, u32_t ns);
@@ -111,34 +112,48 @@ static err_t low_level_init(struct netif *netif)
     netif->flags |= NETIF_FLAG_IGMP;
 #endif
 
-    printf("[INFO] ethernetif: opening EMAC hardware...\n");
-    EMAC_Open(&my_mac_addr[0]);
-    printf("[INFO] ethernetif: EMAC hardware open complete.\n");
-
     if (sys_sem_new(&xRxSemaphore, 0) != ERR_OK)
     {
+        printf("[ERROR] ethernetif: failed to create RX interrupt semaphore.\n");
+        return ERR_MEM;
+    }
+    else if (sys_sem_new(&xRxStartupSemaphore, 0) != ERR_OK)
+    {
         printf("[ERROR] ethernetif: failed to create RX startup semaphore.\n");
+        sys_sem_free(&xRxSemaphore);
+        xRxSemaphore = NULL;
         return ERR_MEM;
     }
     else if ((xRxThread = sys_thread_new("eth_rx", eth_rx_thread_entry, NULL, RX_THREAD_STACKSIZE, RX_THREAD_PRIO)) == NULL)
     {
         printf("[ERROR] ethernetif: failed to create eth_rx task. FreeRTOS heap may be exhausted.\n");
+        sys_sem_free(&xRxStartupSemaphore);
+        xRxStartupSemaphore = NULL;
         sys_sem_free(&xRxSemaphore);
         xRxSemaphore = NULL;
         return ERR_MEM;
     }
 
     printf("[INFO] ethernetif: waiting for eth_rx task startup...\n");
-    if (sys_arch_sem_wait(&xRxSemaphore, 2000) == SYS_ARCH_TIMEOUT)
+    if (sys_arch_sem_wait(&xRxStartupSemaphore, 2000) == SYS_ARCH_TIMEOUT)
     {
         printf("[ERROR] ethernetif: eth_rx task did not start within 2000 ms.\n");
         vTaskDelete(xRxThread);
         xRxThread = NULL;
+        sys_sem_free(&xRxStartupSemaphore);
+        xRxStartupSemaphore = NULL;
         sys_sem_free(&xRxSemaphore);
         xRxSemaphore = NULL;
         return ERR_TIMEOUT;
     }
     printf("[INFO] ethernetif: eth_rx task started.\n");
+
+    sys_sem_free(&xRxStartupSemaphore);
+    xRxStartupSemaphore = NULL;
+
+    printf("[INFO] ethernetif: opening EMAC hardware...\n");
+    EMAC_Open(&my_mac_addr[0]);
+    printf("[INFO] ethernetif: EMAC hardware open complete.\n");
 
     return ERR_OK;
 }
@@ -148,7 +163,7 @@ static void eth_rx_thread_entry(void *parameter)
 {
     int len;
 
-    sys_sem_signal(&xRxSemaphore);
+    sys_sem_signal(&xRxStartupSemaphore);
 
     while (1)
     {
