@@ -169,7 +169,7 @@ APP_IMAGE FLASH_START FLASH_SIZE
         .ANY (.bss.sram.data)
         .ANY1 (.bss.NoInit.activation_buf_sram)
     }
-    HYPERRAM_DATA SPIM0_START SPIM0_SIZE UNINIT
+    HYPERRAM_DATA SPIM0_START UNINIT SPIM0_SIZE
     {
         .ANY (.bss.hyperram.data)
     }
