@@ -30,7 +30,7 @@ static void SDCard_PinConfig(void)
     SET_SD0_DAT3_PE5();
 
     /* Enable internal pull-up on PD13 (nCD) to prevent floating state when no card is inserted */
-    GPIO_SetPullMode(PD, BIT13, GPIO_PULLUP_ENABLE);
+    GPIO_SetPullCtl(PD, BIT13, GPIO_PUSEL_PULL_UP);
 }
 
 static void Ethernet_PinConfig(void)
