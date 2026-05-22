@@ -85,7 +85,7 @@ __attribute__((section(".bss.NoInit.activation_buf_sram"), aligned(32))) static 
 
 __attribute__((section(".bss.vram.data"), aligned(32))) static char fb_array[OMV_FB_SIZE + OMV_FB_ALLOC_SIZE];
 __attribute__((section(".bss.vram.data"), aligned(32))) static char jpeg_array[OMV_JPEG_BUF_SIZE];
-__attribute__((section(".bss.hyperram.data"), aligned(32))) static char frame_buf1[OMV_FB_SIZE];
+__attribute__((section(".bss.hyperram.data"), aligned(32))) static char frame_buf1[LCD_FRAME_BUFFER_SIZE];
 
 char *_fb_base = NULL;
 char *_fb_end = NULL;
@@ -99,11 +99,37 @@ static inline uint16_t Rgb888ToRgb565(const uint8_t *pixel)
                       ((uint16_t)pixel[2] >> 3));
 }
 
-static void ConvertRgb888ToRgb565Frame(const uint8_t *src, uint16_t *dst)
+static uint16_t s_displayXMap[LCD_DISPLAY_WIDTH];
+static uint16_t s_displayYMap[LCD_DISPLAY_HEIGHT];
+
+static void ConvertRgb888ToRgb565Scaled(const uint8_t *src, uint16_t *dst, uint32_t dstWidth, uint32_t dstHeight)
 {
-    for (uint32_t i = 0; i < (IMAGE_WIDTH * IMAGE_HEIGHT); ++i)
+    static bool mapsInitialized = false;
+
+    if (!mapsInitialized)
     {
-        dst[i] = Rgb888ToRgb565(src + (i * IMAGE_CHANNELS));
+        for (uint32_t x = 0; x < dstWidth; ++x)
+        {
+            s_displayXMap[x] = (uint16_t)((x * IMAGE_WIDTH) / dstWidth);
+        }
+
+        for (uint32_t y = 0; y < dstHeight; ++y)
+        {
+            s_displayYMap[y] = (uint16_t)((y * IMAGE_HEIGHT) / dstHeight);
+        }
+
+        mapsInitialized = true;
+    }
+
+    for (uint32_t y = 0; y < dstHeight; ++y)
+    {
+        const uint8_t *srcRow = src + (s_displayYMap[y] * IMAGE_WIDTH * IMAGE_CHANNELS);
+        uint16_t *dstRow = dst + (y * dstWidth);
+
+        for (uint32_t x = 0; x < dstWidth; ++x)
+        {
+            dstRow[x] = Rgb888ToRgb565(srcRow + (s_displayXMap[x] * IMAGE_CHANNELS));
+        }
     }
 }
 
@@ -411,11 +437,11 @@ static void vInferenceTask(void *pvParameters)
         (inQuantParams.scale > 0.007f) &&
         (inQuantParams.scale < 0.0085f);
 
-    // OpenMV image struct for overlays/text on the scaled display buffer.
+    // OpenMV image struct for overlays/text on the full LCD display buffer.
     image_t dstImg;
-    dstImg.w = IMAGE_WIDTH;
-    dstImg.h = IMAGE_HEIGHT;
-    dstImg.size = IMAGE_WIDTH * IMAGE_HEIGHT * 2;
+    dstImg.w = LCD_DISPLAY_WIDTH;
+    dstImg.h = LCD_DISPLAY_HEIGHT;
+    dstImg.size = LCD_FRAME_BUFFER_SIZE;
     dstImg.pixfmt = PIXFORMAT_RGB565;
     dstImg.data = (uint8_t *)frame_buf1;
 
@@ -508,19 +534,33 @@ static void vInferenceTask(void *pvParameters)
 
         // 5. Visual Rendering on LCD Panel (if enabled)
 #if defined(__EBI_LCD_PANEL__)
-        // Convert the raw RGB888 input frame directly to RGB565 at native 192x192.
+        // Scale the raw RGB888 input frame to fill the LCD and convert to RGB565.
         stageStart = pmu_get_systick_Count();
-        ConvertRgb888ToRgb565Frame(g_inferenceFrameBuffer, (uint16_t *)dstImg.data);
+        ConvertRgb888ToRgb565Scaled(g_inferenceFrameBuffer,
+                                    (uint16_t *)dstImg.data,
+                                    LCD_DISPLAY_WIDTH,
+                                    LCD_DISPLAY_HEIGHT);
 
         // Draw crosshair indicators at each person peak
         for (size_t i = 0; i < detectionCount; ++i)
         {
             const arm::app::model::Detection& det = detections[i];
-            int x_disp = static_cast<int>(det.x);
-            int y_disp = static_cast<int>(det.y);
+            int x_disp = static_cast<int>((det.x * LCD_DISPLAY_WIDTH) / IMAGE_WIDTH);
+            int y_disp = static_cast<int>((det.y * LCD_DISPLAY_HEIGHT) / IMAGE_HEIGHT);
+            int box_w = LCD_DISPLAY_WIDTH / 24;
+            int box_h = LCD_DISPLAY_HEIGHT / 24;
+            if (box_w < 8) box_w = 8;
+            if (box_h < 8) box_h = 8;
 
             // Draw a bounding crosshair around the detected center peak
-            imlib_draw_rectangle(&dstImg, x_disp - 8, y_disp - 8, 16, 16, COLOR_R5_G6_B5_TO_RGB565(31, 0, 0), 2, false);
+            imlib_draw_rectangle(&dstImg,
+                                 x_disp - (box_w / 2),
+                                 y_disp - (box_h / 2),
+                                 box_w,
+                                 box_h,
+                                 COLOR_R5_G6_B5_TO_RGB565(31, 0, 0),
+                                 2,
+                                 false);
             
             // Draw center dot
             imlib_draw_rectangle(&dstImg, x_disp - 1, y_disp - 1, 2, 2, COLOR_R5_G6_B5_TO_RGB565(31, 31, 0), 1, true);
@@ -546,8 +586,8 @@ static void vInferenceTask(void *pvParameters)
         // Blit to screen
         sDispRect.u32TopLeftX = 0;
         sDispRect.u32TopLeftY = 0;
-        sDispRect.u32BottonRightX = IMAGE_WIDTH - 1;
-        sDispRect.u32BottonRightY = IMAGE_HEIGHT - 1;
+        sDispRect.u32BottonRightX = LCD_DISPLAY_WIDTH - 1;
+        sDispRect.u32BottonRightY = LCD_DISPLAY_HEIGHT - 1;
         stageStart = pmu_get_systick_Count();
         Display_FillRect((uint16_t *)dstImg.data, &sDispRect, 1);
         lcdMs = CyclesToMs(pmu_get_systick_Count() - stageStart);

@@ -55,6 +55,19 @@
 #define IMAGE_CHANNELS             3            // RGB (for full RGB implementation)
 #define FRAME_BUFFER_SIZE          (IMAGE_WIDTH * IMAGE_HEIGHT * IMAGE_CHANNELS)
 
+/* LCD preview size */
+#if defined(LT7381_LCD_PANEL)
+    #define LCD_DISPLAY_WIDTH      800
+    #define LCD_DISPLAY_HEIGHT     480
+#elif defined(FSA506_LCD_PANEL)
+    #define LCD_DISPLAY_WIDTH      480
+    #define LCD_DISPLAY_HEIGHT     272
+#else
+    #define LCD_DISPLAY_WIDTH      IMAGE_WIDTH
+    #define LCD_DISPLAY_HEIGHT     IMAGE_HEIGHT
+#endif
+#define LCD_FRAME_BUFFER_SIZE      (LCD_DISPLAY_WIDTH * LCD_DISPLAY_HEIGHT * 2)
+
 /* --- MODEL INFERENCE CONFIGURATION --- */
 #define MODEL_INPUT_WIDTH          192
 #define MODEL_INPUT_HEIGHT         192
