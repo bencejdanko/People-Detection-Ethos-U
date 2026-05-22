@@ -115,26 +115,43 @@ void SDH0_IRQHandler(void)
 
 int32_t SDH_Open_Disk(SDH_T *sdh, uint32_t u32CardDetSrc)
 {
+    printf("[SDH] Initializing SD Card hardware...\r\n");
     SDH_Open(sdh, u32CardDetSrc);
 
     if (SDH_Probe(sdh))
     {
-        printf("SD initial fail!!\n");
+        printf("[SDH] ERROR: SD card hardware initialization/probe failed!\r\n");
         return SDH_ERR_FAIL;
     }
+    printf("[SDH] SD card hardware initialized successfully.\r\n");
 
     _Path[1] = ':';
     _Path[2] = 0;
 
+    FRESULT res;
     if (sdh == SDH0)
     {
         _Path[0] = '0';
-        f_mount(&_FatfsVolSd0, _Path, 1);
+        printf("[SDH] Mounting FATFS Volume 0 (SD0)...\r\n");
+        res = f_mount(&_FatfsVolSd0, _Path, 1);
+        if (res != FR_OK)
+        {
+            printf("[SDH] ERROR: FATFS Mount failed with code: %d\r\n", res);
+            return SDH_ERR_FAIL;
+        }
+        printf("[SDH] FATFS Volume 0 mounted successfully.\r\n");
     }
     else
     {
         _Path[0] = '1';
-        f_mount(&_FatfsVolSd1, _Path, 1);
+        printf("[SDH] Mounting FATFS Volume 1 (SD1)...\r\n");
+        res = f_mount(&_FatfsVolSd1, _Path, 1);
+        if (res != FR_OK)
+        {
+            printf("[SDH] ERROR: FATFS Mount failed with code: %d\r\n", res);
+            return SDH_ERR_FAIL;
+        }
+        printf("[SDH] FATFS Volume 1 mounted successfully.\r\n");
     }
 
     return SDH_OK;

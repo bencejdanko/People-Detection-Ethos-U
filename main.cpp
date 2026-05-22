@@ -428,15 +428,19 @@ static void vNetworkInitTask(void *pvParameters)
 #endif
 
     // Initialize TCP/IP core stack
+    LOG_INFO("Initializing LwIP TCP/IP core stack...");
     tcpip_init(NULL, NULL);
+    LOG_INFO("LwIP TCP/IP core stack initialized successfully.");
 
     // Register our Ethernet MAC (EMAC0) driver into LwIP netif
+    LOG_INFO("Registering Ethernet MAC driver (EMAC0) to LwIP...");
     netif_add(&g_netif, &ipaddr, &netmask, &gw, NULL, ethernetif_init, tcpip_input);
     netif_set_default(&g_netif);
     netif_set_up(&g_netif);
+    LOG_INFO("Ethernet interface registered and brought UP successfully.");
 
 #if LWIP_DHCP_ENABLE
-    LOG_INFO("DHCP starting...");
+    LOG_INFO("Requesting IP address via DHCP...");
     if (dhcp_start(&g_netif) == ERR_OK)
     {
         while (dhcp_supplied_address(&g_netif) == 0)
@@ -446,25 +450,33 @@ static void vNetworkInitTask(void *pvParameters)
     }
     else
     {
-        LOG_ERROR("DHCP starting failed.");
+        LOG_ERROR("DHCP starting failed!");
         while (1);
     }
 #endif
 
-    LOG_INFO("Network stack successfully initialized.");
-    LOG_INFO("IP address:      %s", ip4addr_ntoa(&g_netif.ip_addr));
-    LOG_INFO("Subnet mask:     %s", ip4addr_ntoa(&g_netif.netmask));
-    LOG_INFO("Default gateway: %s", ip4addr_ntoa(&g_netif.gw));
+    LOG_INFO("Network interface successfully configured:");
+    LOG_INFO("  IP address:      %s", ip4addr_ntoa(&g_netif.ip_addr));
+    LOG_INFO("  Subnet mask:     %s", ip4addr_ntoa(&g_netif.netmask));
+    LOG_INFO("  Default gateway: %s", ip4addr_ntoa(&g_netif.gw));
 
     // Spawn the high performance UDP Video Receiver thread
+    LOG_INFO("Spawning high-performance UDP Video Receiver Task (Stack: 1024 words, Priority: %d)...", tskIDLE_PRIORITY + 3UL);
     xTaskCreate(vUdpVideoReceiverTask, "UdpRecv", 1024, NULL, tskIDLE_PRIORITY + 3UL, &xUdpReceiverTaskHandle);
 
     // Suspend network init task as it is no longer required
+    LOG_INFO("Network initialization complete. Suspending NetInit task.");
     vTaskSuspend(NULL);
 }
 
 int main(void)
 {
+    // Initialize target board (clocks, NPU, HyperRAM, SD card, Ethernet RMII pins)
+    if (0 != BoardInit())
+    {
+        while (1);
+    }
+
     // Configure MPU regions for cache coherency and data access safety
     const ARM_MPU_Region_t mpuConfig[] =
     {
@@ -498,37 +510,125 @@ int main(void)
     };
 
     // Apply custom MPU regions
+    LOG_INFO("Configuring custom MPU memory caching regions...");
     InitPreDefMPURegion(&mpuConfig[0], sizeof(mpuConfig) / sizeof(mpuConfig[0]));
+    LOG_INFO("Custom MPU memory cache regions applied successfully (tensorArena WTRA, framebuffers non-cacheable).");
 
-    // Initialize target board (clocks, NPU, HyperRAM, SD card, Ethernet RMII pins)
-    if (0 != BoardInit())
-    {
-        while (1);
-    }
+    // Enable MemManage, BusFault, and UsageFault handlers explicitly in SCB
+    LOG_INFO("Enabling dedicated SCB fault handlers (MemManage, BusFault, UsageFault)...");
+    SCB->SHCSR |= (SCB_SHCSR_MEMFAULTENA_Msk | SCB_SHCSR_BUSFAULTENA_Msk | SCB_SHCSR_USGFAULTENA_Msk);
+    LOG_INFO("SCB fault handlers activated successfully.");
 
     // Initialize OpenMV memory allocators
+    LOG_INFO("Initializing OpenMV frame buffer allocators...");
     omv_init();
+    LOG_INFO("OpenMV frame buffer memory allocator initialized successfully.");
 
     LOG_INFO("----------------------------------------------------------------");
     LOG_INFO("    Starting M55M1 UDP Server People Counting Firmware     ");
     LOG_INFO("----------------------------------------------------------------");
 
     // Create system coordinator tasks
+    LOG_INFO("Spawning NetworkInit FreeRTOS task (Stack: %d words, Priority: %d)...", TCPIP_THREAD_STACKSIZE, tskIDLE_PRIORITY + 4UL);
     xTaskCreate(vNetworkInitTask, "NetInit", TCPIP_THREAD_STACKSIZE, NULL, tskIDLE_PRIORITY + 4UL, NULL);
+    
+    LOG_INFO("Spawning ML Inference FreeRTOS task (Stack: 2048 words, Priority: %d)...", tskIDLE_PRIORITY + 2UL);
     xTaskCreate(vInferenceTask, "Inference", 2048, NULL, tskIDLE_PRIORITY + 2UL, &xInferenceTaskHandle);
 
     // Start FreeRTOS scheduler
+    LOG_INFO("Starting FreeRTOS Task Scheduler...");
     vTaskStartScheduler();
 
     // System will never reach here unless memory allocation failed
     for (;;);
 }
 
-/* --- FREERTOS HOOKS --- */
+/* --- FREERTOS HOOKS & DIAGNOSTIC FAULT HANDLERS --- */
 extern "C" {
+
+// C fault analyzer function
+void HardFault_Handler_C(uint32_t *pulStackedRegisters)
+{
+    uint32_t r0  = pulStackedRegisters[0];
+    uint32_t r1  = pulStackedRegisters[1];
+    uint32_t r2  = pulStackedRegisters[2];
+    uint32_t r3  = pulStackedRegisters[3];
+    uint32_t r12 = pulStackedRegisters[4];
+    uint32_t lr  = pulStackedRegisters[5];
+    uint32_t pc  = pulStackedRegisters[6];
+    uint32_t psr = pulStackedRegisters[7];
+
+    printf("\r\n==================================================\r\n");
+    printf("   🔥 HARDWARE FAULT DETECTED! 🔥\r\n");
+    printf("==================================================\r\n");
+    printf("Stacked CPU Registers:\r\n");
+    printf("  R0  = 0x%08X\r\n", r0);
+    printf("  R1  = 0x%08X\r\n", r1);
+    printf("  R2  = 0x%08X\r\n", r2);
+    printf("  R3  = 0x%08X\r\n", r3);
+    printf("  R12 = 0x%08X\r\n", r12);
+    printf("  LR  = 0x%08X (Return Address / Link Register)\r\n", lr);
+    printf("  PC  = 0x%08X (Faulting Instruction Address)\r\n", pc);
+    printf("  PSR = 0x%08X\r\n", psr);
+    printf("\r\nSystem Control Block Registers:\r\n");
+    printf("  CFSR  = 0x%08X\r\n", (unsigned int)SCB->CFSR);
+    printf("  HFSR  = 0x%08X\r\n", (unsigned int)SCB->HFSR);
+    printf("  MMFAR = 0x%08X (MemManage Fault Address)\r\n", (unsigned int)SCB->MMFAR);
+    printf("  BFAR  = 0x%08X (BusFault Address)\r\n", (unsigned int)SCB->BFAR);
+    printf("==================================================\r\n");
+
+    // Block forever to halt execution
+    while (1);
+}
+
+// Assembly wrappers to retrieve the active stack pointer (MSP/PSP)
+__attribute__((naked)) void HardFault_Handler(void)
+{
+    __asm volatile(
+        "tst lr, #4\n"
+        "ite eq\n"
+        "mrseq r0, msp\n"
+        "mrsne r0, psp\n"
+        "b HardFault_Handler_C\n"
+    );
+}
+
+__attribute__((naked)) void MemManage_Handler(void)
+{
+    __asm volatile(
+        "tst lr, #4\n"
+        "ite eq\n"
+        "mrseq r0, msp\n"
+        "mrsne r0, psp\n"
+        "b HardFault_Handler_C\n"
+    );
+}
+
+__attribute__((naked)) void BusFault_Handler(void)
+{
+    __asm volatile(
+        "tst lr, #4\n"
+        "ite eq\n"
+        "mrseq r0, msp\n"
+        "mrsne r0, psp\n"
+        "b HardFault_Handler_C\n"
+    );
+}
+
+__attribute__((naked)) void UsageFault_Handler(void)
+{
+    __asm volatile(
+        "tst lr, #4\n"
+        "ite eq\n"
+        "mrseq r0, msp\n"
+        "mrsne r0, psp\n"
+        "b HardFault_Handler_C\n"
+    );
+}
+
 void vApplicationMallocFailedHook(void)
 {
-    LOG_ERROR("FreeRTOS Stack Overflow / Memory allocation failed!");
+    LOG_ERROR("FreeRTOS Heap allocation failed!");
     taskDISABLE_INTERRUPTS();
     for (;;);
 }
