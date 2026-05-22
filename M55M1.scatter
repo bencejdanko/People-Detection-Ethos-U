@@ -144,7 +144,7 @@ APP_IMAGE FLASH_START FLASH_SIZE
     ARM_LIB_HEAP  __HEAP_BASE EMPTY  HEAP_SIZE {}		; Reserve empty region for heap
 #endif
 
-    SRAM2 SRAM2_START UNINIT SRAM2_SIZE
+    SRAM2 SRAM2_START SRAM2_SIZE
     {
         .ANY (.bss.vram.data)
         *memp.o (.bss.memp_memory_PBUF_POOL_base)

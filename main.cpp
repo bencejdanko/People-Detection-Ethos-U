@@ -465,6 +465,41 @@ static void vNetworkInitTask(void *pvParameters)
 
 int main(void)
 {
+    // Configure MPU regions for cache coherency and data access safety
+    const ARM_MPU_Region_t mpuConfig[] =
+    {
+        {
+            ARM_MPU_RBAR(((unsigned int)arm::app::tensorArena),        // Base
+                         ARM_MPU_SH_NON,    // Non-shareable
+                         0,                 // Read-Only: 0=Read-Write, 1=Read-Only
+                         0,                 // Non-Privileged: 0=Privileged & Non-Privileged, 1=Privileged only
+                         1),                // eXecute Never: 0=Execution allowed, 1=Execution never allowed
+            ARM_MPU_RLAR((((unsigned int)arm::app::tensorArena) + sizeof(arm::app::tensorArena) - 1),        // Limit
+                         eMPU_ATTR_CACHEABLE_WTRA) // Attribute index - cacheable Write-Through
+        },
+        {
+            ARM_MPU_RBAR(((unsigned int)fb_array),        // Base
+                         ARM_MPU_SH_NON,    // Non-shareable
+                         0,                 // Read-Only
+                         0,                 // Non-Privileged
+                         1),                // eXecute Never
+            ARM_MPU_RLAR((((unsigned int)fb_array) + sizeof(fb_array) - 1),        // Limit
+                         eMPU_ATTR_NON_CACHEABLE) // Non-Cacheable
+        },
+        {
+            ARM_MPU_RBAR(((unsigned int)frame_buf1),        // Base
+                         ARM_MPU_SH_NON,    // Non-shareable
+                         0,                 // Read-Only
+                         0,                 // Non-Privileged
+                         1),                // eXecute Never
+            ARM_MPU_RLAR((((unsigned int)frame_buf1) + sizeof(frame_buf1) - 1),        // Limit
+                         eMPU_ATTR_NON_CACHEABLE) // Non-Cacheable
+        }
+    };
+
+    // Apply custom MPU regions
+    InitPreDefMPURegion(&mpuConfig[0], sizeof(mpuConfig) / sizeof(mpuConfig[0]));
+
     // Initialize target board (clocks, NPU, HyperRAM, SD card, Ethernet RMII pins)
     if (0 != BoardInit())
     {

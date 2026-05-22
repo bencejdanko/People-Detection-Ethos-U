@@ -18,9 +18,6 @@
    
    Place the downloaded `.tflite` file at the root of this repository and rename it to `model.tflite`.
 
-3. Build and Flash:
-   Open the `KEIL/` directory to build the package.
-
 ### Running the Streamer
 
 Stream a live feed from the default webcam (`0`):
