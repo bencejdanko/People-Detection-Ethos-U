@@ -97,9 +97,9 @@ static void SYS_Init(void)
     /* Enable NPU module clock */
     CLK_EnableModuleClock(NPU0_MODULE);
 
-    /* Enable SDH0 module clock source as APLL1/2 and SDH0 module clock divider as 5 */
-    CLK_SetModuleClock(SDH0_MODULE, CLK_SDHSEL_SDH0SEL_APLL1_DIV2, CLK_SDHDIV_SDH0DIV(5));
+    /* Enable SDH0 module clock source as HCLK0 and SDH0 module clock divider as 4 */
     CLK_EnableModuleClock(SDH0_MODULE);
+    CLK_SetModuleClock(SDH0_MODULE, CLK_SDHSEL_SDH0SEL_HCLK0, CLK_SDHDIV_SDH0DIV(4));
 
     /* Enable Ethernet MAC (EMAC0) module clock */
     CLK_EnableModuleClock(EMAC0_MODULE);

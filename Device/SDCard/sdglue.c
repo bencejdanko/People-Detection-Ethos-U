@@ -55,12 +55,10 @@ void SDH0_IRQHandler(void)
             isr = SDH0->INTSTS;
         }
 
-#if (DEF_CARD_DETECT_SOURCE == CardDetect_From_DAT3)
+        uint32_t u32CDState = (((SDH0->INTEN & SDH_INTEN_CDSRC_Msk) >> SDH_INTEN_CDSRC_Pos) == 0) ?
+                              (!(SDH0->INTSTS & SDH_INTSTS_CDSTS_Msk)) : (SDH0->INTSTS & SDH_INTSTS_CDSTS_Msk);
 
-        if (!(isr & SDH_INTSTS_CDSTS_Msk))
-#else
-        if (isr & SDH_INTSTS_CDSTS_Msk)
-#endif
+        if (u32CDState)
         {
             printf("\n***** card remove !\n");
             SD0.IsCardInsert = FALSE;   // SDISR_CD_Card = 1 means card remove for GPIO mode
