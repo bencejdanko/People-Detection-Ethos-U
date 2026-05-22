@@ -337,7 +337,7 @@
               <MiscControls />
               <Define>NVT_VECTOR_ON_FLASH, TF_LITE_STATIC_MEMORY, ARM_MATH_DSP, ARM_NPU, ACTIVATION_BUF_SZ=0x00100000</Define>
               <Undefine />
-              <IncludePath>M55M1BSP\Library\CMSIS\Core\Include;M55M1BSP\Library\Device\Nuvoton\M55M1\Include;M55M1BSP\Library\CMSIS\DSP\Include;M55M1BSP\Library\StdDriver\inc;M55M1BSP\Library\StdDriver\inc\npu;M55M1BSP\ThirdParty\openmv\omv\imlib;M55M1BSP\ThirdParty\openmv\omv\alloc;M55M1BSP\ThirdParty\openmv\omv\common;M55M1BSP\ThirdParty\openmv\omv\Lib;M55M1BSP\ThirdParty\tflite_micro;M55M1BSP\ThirdParty\tflite_micro\_deps\tensorflow-flatbuffers-src\include;M55M1BSP\ThirdParty\ml-embedded-evaluation-kit\source\application\api\common\include;M55M1BSP\ThirdParty\ml-embedded-evaluation-kit\source\log\include;M55M1BSP\ThirdParty\ml-embedded-evaluation-kit\source\math\include;M55M1BSP\ThirdParty\ml-embedded-evaluation-kit\source\application\main\include;M55M1BSP\ThirdParty\ml-embedded-evaluation-kit\source\profiler\include;Device\include;model;NPU\include;Pattern\include;ProfilerCounter\include;.;M55M1BSP\ThirdParty\tflite_micro\_deps\tensorflow-gemlowp-src;M55M1BSP\ThirdParty\FatFs\source;M55M1BSP\ThirdParty\FreeRTOS\Source\include;M55M1BSP\ThirdParty\FreeRTOS\Source\portable\GCC\ARM_CM55\non_secure;M55M1BSP\ThirdParty\lwIP\src\include;M55M1BSP\ThirdParty\lwIP\src\include\compat;M55M1BSP\Library\StdDriver\inc\emac;Device\lwip_port\include;Device\lwip_port\drv_emac;Device\lwip_port\netif</IncludePath>
+              <IncludePath>M55M1BSP\Library\CMSIS\Core\Include;M55M1BSP\Library\Device\Nuvoton\M55M1\Include;M55M1BSP\Library\CMSIS\DSP\Include;M55M1BSP\Library\StdDriver\inc;M55M1BSP\Library\StdDriver\inc\npu;M55M1BSP\ThirdParty\openmv\omv\imlib;M55M1BSP\ThirdParty\openmv\omv\alloc;M55M1BSP\ThirdParty\openmv\omv\common;M55M1BSP\ThirdParty\openmv\omv\Lib;M55M1BSP\ThirdParty\tflite_micro;M55M1BSP\ThirdParty\tflite_micro\_deps\tensorflow-flatbuffers-src\include;M55M1BSP\ThirdParty\ml-embedded-evaluation-kit\source\application\api\common\include;M55M1BSP\ThirdParty\ml-embedded-evaluation-kit\source\log\include;M55M1BSP\ThirdParty\ml-embedded-evaluation-kit\source\math\include;M55M1BSP\ThirdParty\ml-embedded-evaluation-kit\source\application\main\include;M55M1BSP\ThirdParty\ml-embedded-evaluation-kit\source\profiler\include;Device\include;model;NPU\include;Pattern\include;ProfilerCounter\include;.;M55M1BSP\ThirdParty\tflite_micro\_deps\tensorflow-gemlowp-src;M55M1BSP\ThirdParty\FatFs\source;M55M1BSP\ThirdParty\FreeRTOS\Source\include;M55M1BSP\ThirdParty\FreeRTOS\Source\portable\GCC\ARM_CM55_NTZ\non_secure;M55M1BSP\ThirdParty\lwIP\src\include;M55M1BSP\ThirdParty\lwIP\src\include\compat;M55M1BSP\Library\StdDriver\inc\emac;Device\lwip_port\include;Device\lwip_port\drv_emac;Device\lwip_port\netif</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -747,14 +747,14 @@
               <FilePath>M55M1BSP\ThirdParty\FreeRTOS\Source\event_groups.c</FilePath>
             </File>
             <File>
-              <FileName>..\M55M1BSP\ThirdParty\FreeRTOS\Source\portable\GCC\ARM_CM55\non_secure\port.c</FileName>
+              <FileName>..\M55M1BSP\ThirdParty\FreeRTOS\Source\portable\GCC\ARM_CM55_NTZ\non_secure\port.c</FileName>
               <FileType>1</FileType>
-              <FilePath>M55M1BSP\ThirdParty\FreeRTOS\Source\portable\GCC\ARM_CM55\non_secure\port.c</FilePath>
+              <FilePath>M55M1BSP\ThirdParty\FreeRTOS\Source\portable\GCC\ARM_CM55_NTZ\non_secure\port.c</FilePath>
             </File>
             <File>
-              <FileName>..\M55M1BSP\ThirdParty\FreeRTOS\Source\portable\GCC\ARM_CM55\non_secure\portasm.c</FileName>
+              <FileName>..\M55M1BSP\ThirdParty\FreeRTOS\Source\portable\GCC\ARM_CM55_NTZ\non_secure\portasm.c</FileName>
               <FileType>1</FileType>
-              <FilePath>M55M1BSP\ThirdParty\FreeRTOS\Source\portable\GCC\ARM_CM55\non_secure\portasm.c</FilePath>
+              <FilePath>M55M1BSP\ThirdParty\FreeRTOS\Source\portable\GCC\ARM_CM55_NTZ\non_secure\portasm.c</FilePath>
             </File>
             <File>
               <FileName>..\M55M1BSP\ThirdParty\FreeRTOS\Source\portable\MemMang\heap_4.c</FileName>
