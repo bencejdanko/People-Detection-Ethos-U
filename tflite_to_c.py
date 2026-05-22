@@ -32,7 +32,7 @@ def convert_tflite_to_c(tflite_path, header_path):
         f.write("extern \"C\" {\n")
         f.write("#endif\n\n")
         
-        f.write("/* Raw TFLite model data aligned to 16 bytes for NPU/CPU access */\n")
+        f.write("/* Raw TFLite model data. Keep const so it stays in embedded flash. */\n")
         f.write("__attribute__((aligned(16)))\n")
         f.write("const unsigned char g_model_tflite[] = {\n")
         

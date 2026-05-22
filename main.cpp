@@ -56,9 +56,6 @@ extern "C" {
 #include "Display.h"
 #endif
 
-/* HyperRAM allocation address for model file */
-#define MODEL_AT_HYPERRAM_ADDR    (0x82400000)
-
 /* Task Handles */
 static TaskHandle_t xUdpReceiverTaskHandle = NULL;
 static TaskHandle_t xInferenceTaskHandle = NULL;
@@ -68,9 +65,9 @@ struct netif g_netif;
 
 /* --- DOUBLE BUFFER MEMORY ALLOCATION --- */
 // networkFrameBuffer is written to by UDP Receiver task
-__attribute__((section(".bss.sram.data"), aligned(32))) static uint8_t g_networkFrameBuffer[FRAME_BUFFER_SIZE];
+__attribute__((section(".bss.hyperram.data"), aligned(32))) static uint8_t g_networkFrameBuffer[FRAME_BUFFER_SIZE];
 // inferenceFrameBuffer is read by ML Inference task
-__attribute__((section(".bss.sram.data"), aligned(32))) static uint8_t g_inferenceFrameBuffer[FRAME_BUFFER_SIZE];
+__attribute__((section(".bss.hyperram.data"), aligned(32))) static uint8_t g_inferenceFrameBuffer[FRAME_BUFFER_SIZE];
 
 /* Tensor arena buffer for TensorFlow Lite Micro placed in SRAM01_HYPERRAM */
 namespace arm {
@@ -88,7 +85,7 @@ __attribute__((section(".bss.NoInit.activation_buf_sram"), aligned(32))) static 
 
 __attribute__((section(".bss.vram.data"), aligned(32))) static char fb_array[OMV_FB_SIZE + OMV_FB_ALLOC_SIZE];
 __attribute__((section(".bss.vram.data"), aligned(32))) static char jpeg_array[OMV_JPEG_BUF_SIZE];
-__attribute__((section(".bss.sram.data"), aligned(32))) static char frame_buf1[OMV_FB_SIZE];
+__attribute__((section(".bss.hyperram.data"), aligned(32))) static char frame_buf1[OMV_FB_SIZE];
 
 char *_fb_base = NULL;
 char *_fb_end = NULL;
@@ -212,13 +209,30 @@ static void vUdpVideoReceiverTask(void *pvParameters)
     }
 }
 
-/* Copy model file from Embedded Flash array to HyperRAM */
-static int32_t LoadModelFromSDCard(void)
+static bool EmbeddedModelContainsEthosUCustomOp(void)
 {
-    LOG_INFO("Loading model directly from Embedded Flash memory...");
-    std::memcpy((void *)MODEL_AT_HYPERRAM_ADDR, g_model_tflite, g_model_tflite_len);
-    LOG_INFO("Model successfully loaded to HyperRAM (%d bytes).", g_model_tflite_len);
-    return g_model_tflite_len;
+    static const char ethosUOpName[] = "ethos-u";
+    const size_t opNameLen = sizeof(ethosUOpName) - 1;
+
+    if (g_model_tflite_len < opNameLen) {
+        return false;
+    }
+
+    for (unsigned int i = 0; i <= g_model_tflite_len - opNameLen; ++i) {
+        if (std::memcmp(&g_model_tflite[i], ethosUOpName, opNameLen) == 0) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/* Use the baked-in model from internal flash. Ethos-U can read this region. */
+static int32_t LoadModelFromEmbeddedFlash(const unsigned char **modelData)
+{
+    *modelData = g_model_tflite;
+    LOG_INFO("Using model directly from embedded flash (%u bytes).", g_model_tflite_len);
+    return (int32_t)g_model_tflite_len;
 }
 
 /* --- ML Inference and Post-Processing Task --- */
@@ -226,19 +240,35 @@ static void vInferenceTask(void *pvParameters)
 {
     (void)pvParameters;
     
-    // Load model from SD card
-    int32_t modelSize = LoadModelFromSDCard();
+    // Use model from embedded flash.
+    const unsigned char *modelData = NULL;
+    int32_t modelSize = LoadModelFromEmbeddedFlash(&modelData);
     if (modelSize <= 0) {
-        LOG_ERROR("Failed to load model from SD Card.");
+        LOG_ERROR("Failed to load embedded model.");
+        vTaskDelete(NULL);
+        return;
+    }
+
+    if (!EmbeddedModelContainsEthosUCustomOp()) {
+        LOG_ERROR("Embedded model is not Vela-optimized for Ethos-U (missing custom op \"ethos-u\").");
+        LOG_ERROR("Regenerate embedded_model.h from vela_output/*.tflite, not the original int8 model.");
         vTaskDelete(NULL);
         return;
     }
 
     // Initialize model wrapper
     arm::app::InferenceModel model;
+    LOG_INFO("TFLM tensor arena: start=0x%08X end=0x%08X size=%u bytes.",
+             (unsigned int)arm::app::tensorArena,
+             (unsigned int)(arm::app::tensorArena + sizeof(arm::app::tensorArena) - 1),
+             (unsigned int)sizeof(arm::app::tensorArena));
+    LOG_INFO("TFLM model buffer: start=0x%08X end=0x%08X size=%d bytes.",
+             (unsigned int)modelData,
+             (unsigned int)(modelData + modelSize - 1),
+             (int)modelSize);
     if (!model.Init(arm::app::tensorArena,
                     sizeof(arm::app::tensorArena),
-                    (unsigned char *)MODEL_AT_HYPERRAM_ADDR,
+                    modelData,
                     modelSize))
     {
         LOG_ERROR("Failed to initialize TFLite Micro model.");
@@ -428,7 +458,7 @@ static void vNetworkInitTask(void *pvParameters)
     LOG_INFO("  Default gateway: %s", ip4addr_ntoa(&g_netif.gw));
 
     // Spawn the high performance UDP Video Receiver thread
-    LOG_INFO("Spawning UDP Video Receiver Task (Stack: 2048 words, Priority: %d)...", tskIDLE_PRIORITY + 3UL);
+    LOG_INFO("Spawning UDP Video Receiver Task (Stack: 2048 words, Priority: %lu)...", (unsigned long)(tskIDLE_PRIORITY + 3UL));
     xTaskCreate(vUdpVideoReceiverTask, "UdpRecv", 2048, NULL, tskIDLE_PRIORITY + 3UL, &xUdpReceiverTaskHandle);
 
     LOG_INFO("Network initialization complete.");
@@ -497,10 +527,10 @@ int main(void)
     LOG_INFO("----------------------------------------------------------------");
 
     // Create system coordinator tasks
-    LOG_INFO("Spawning NetworkInit FreeRTOS task (Stack: 2048 words, Priority: %d)...", tskIDLE_PRIORITY + 4UL);
+    LOG_INFO("Spawning NetworkInit FreeRTOS task (Stack: 2048 words, Priority: %lu)...", (unsigned long)(tskIDLE_PRIORITY + 4UL));
     xTaskCreate(vNetworkInitTask, "NetInit", 2048, NULL, tskIDLE_PRIORITY + 4UL, NULL);
     
-    LOG_INFO("Spawning ML Inference FreeRTOS task (Stack: 4096 words, Priority: %d)...", tskIDLE_PRIORITY + 2UL);
+    LOG_INFO("Spawning ML Inference FreeRTOS task (Stack: 4096 words, Priority: %lu)...", (unsigned long)(tskIDLE_PRIORITY + 2UL));
     xTaskCreate(vInferenceTask, "Inference", 4096, NULL, tskIDLE_PRIORITY + 2UL, &xInferenceTaskHandle);
 
     // Start FreeRTOS scheduler

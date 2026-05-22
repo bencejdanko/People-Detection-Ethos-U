@@ -169,8 +169,13 @@ APP_IMAGE FLASH_START FLASH_SIZE
         .ANY (.bss.sram.data)
         .ANY1 (.bss.NoInit.activation_buf_sram)
     }
-    ; Check size overflow here and ImageLength is uncompressed size
-    ScatterAssert((ImageLength(SRAM_NONCACHEABLE) + ImageLength(SRAM01_HYPERRAM)) < (SRAM01_ALIASE_SIZE + SPIM0_SIZE))
+    HYPERRAM_DATA SPIM0_START SPIM0_SIZE UNINIT
+    {
+        .ANY (.bss.hyperram.data)
+    }
+    ; Keep all Ethos-U activation/input/output buffers inside SRAM01.
+    ; The NPU cannot use SPIM/HyperRAM for the tensor arena on this target.
+    ScatterAssert((ImageLength(SRAM_NONCACHEABLE) + ImageLength(SRAM01_HYPERRAM)) < SRAM01_ALIASE_SIZE)
 
     ARM_LIB_STACK __STACK_TOP EMPTY - STACK_SIZE {}     ; Reserve empty region for stack
 

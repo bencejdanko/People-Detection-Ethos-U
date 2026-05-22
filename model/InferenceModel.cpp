@@ -38,6 +38,11 @@ bool arm::app::InferenceModel::EnlistOperations()
         return false;
     }
 
+    if (this->m_opResolver.AddAdd() != kTfLiteOk) {
+        printf_err("Failed to add Add to op resolver\n");
+        return false;
+    }
+
     if (this->m_opResolver.AddSoftmax() != kTfLiteOk) {
         printf_err("Failed to add Softmax to op resolver\n");
         return false;
