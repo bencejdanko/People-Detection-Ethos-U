@@ -157,33 +157,40 @@ static void vUdpVideoReceiverTask(void *pvParameters)
 
     LOG_INFO("UDP server listening on port %d...", UDP_STREAM_PORT);
     LOG_INFO("UdpRecv stack high water mark: %u words remaining.", (unsigned int)uxTaskGetStackHighWaterMark(NULL));
-    netconn_set_recvtimeout(conn, 5000);
+    netconn_set_nonblocking(conn, 1);
 
     uint32_t activeFrameId = 0xFFFFFFFF;
     uint32_t accumulatedBytes = 0;
     uint32_t lastReportedPackets = 0;
+    TickType_t lastHeartbeatTick = xTaskGetTickCount();
 
     while (1)
     {
         err = netconn_recv(conn, &buf);
-        if (err == ERR_TIMEOUT)
+        if (err == ERR_WOULDBLOCK)
         {
-            LOG_INFO("UDP RX heartbeat: packets=%u valid_chunks=%u completed_frames=%u partial=%u/%u short=%u bad_magic=%u bad_len=%u bad_offset=%u stale=%u",
-                     (unsigned int)packetsReceived,
-                     (unsigned int)validChunks,
-                     (unsigned int)completedFrames,
-                     (unsigned int)accumulatedBytes,
-                     (unsigned int)FRAME_BUFFER_SIZE,
-                     (unsigned int)shortPackets,
-                     (unsigned int)badMagicPackets,
-                     (unsigned int)badLengthPackets,
-                     (unsigned int)badOffsetPackets,
-                     (unsigned int)staleFramePackets);
-            if (packetsReceived == lastReportedPackets)
+            TickType_t now = xTaskGetTickCount();
+            if ((now - lastHeartbeatTick) >= pdMS_TO_TICKS(5000))
             {
-                LOG_INFO("UDP RX heartbeat: no packets arrived in the last 5 seconds.");
+                LOG_INFO("UDP RX heartbeat: packets=%u valid_chunks=%u completed_frames=%u partial=%u/%u short=%u bad_magic=%u bad_len=%u bad_offset=%u stale=%u",
+                         (unsigned int)packetsReceived,
+                         (unsigned int)validChunks,
+                         (unsigned int)completedFrames,
+                         (unsigned int)accumulatedBytes,
+                         (unsigned int)FRAME_BUFFER_SIZE,
+                         (unsigned int)shortPackets,
+                         (unsigned int)badMagicPackets,
+                         (unsigned int)badLengthPackets,
+                         (unsigned int)badOffsetPackets,
+                         (unsigned int)staleFramePackets);
+                if (packetsReceived == lastReportedPackets)
+                {
+                    LOG_INFO("UDP RX heartbeat: no packets arrived in the last 5 seconds.");
+                }
+                lastReportedPackets = packetsReceived;
+                lastHeartbeatTick = now;
             }
-            lastReportedPackets = packetsReceived;
+            vTaskDelay(pdMS_TO_TICKS(10));
             continue;
         }
         else if (err != ERR_OK)
