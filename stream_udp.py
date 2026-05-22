@@ -18,11 +18,11 @@ import ipaddress
 
 # Protocol Specifications
 MAGIC_HEADER = b"FRME"  # 0x46524D45 in ASCII
-CHUNK_SIZE = 1024      # Size of the payload chunk in bytes
+DEFAULT_CHUNK_SIZE = 1400  # Safe for 1500-byte Ethernet MTU with UDP/app headers
 IMAGE_W = 192
 IMAGE_H = 192
 
-def stream_video(target_ip, target_port, source, fps, channels=3, chunk_delay=0.0005, bind_ip=""):
+def stream_video(target_ip, target_port, source, fps, channels=3, chunk_delay=0.0005, bind_ip="", chunk_size=DEFAULT_CHUNK_SIZE):
     # Create UDP socket
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     if bind_ip:
@@ -88,11 +88,11 @@ def stream_video(target_ip, target_port, source, fps, channels=3, chunk_delay=0.
             assert len(raw_bytes) == frame_size, f"Invalid frame size: {len(raw_bytes)} (expected {frame_size})"
 
             # 4. Stream frame in chunks
-            num_chunks = (frame_size + CHUNK_SIZE - 1) // CHUNK_SIZE
+            num_chunks = (frame_size + chunk_size - 1) // chunk_size
             
             for i in range(num_chunks):
-                offset = i * CHUNK_SIZE
-                chunk_payload = raw_bytes[offset:offset + CHUNK_SIZE]
+                offset = i * chunk_size
+                chunk_payload = raw_bytes[offset:offset + chunk_size]
                 chunk_len = len(chunk_payload)
                 
                 # Assemble Header (20 bytes):
@@ -141,6 +141,7 @@ if __name__ == "__main__":
     parser.add_argument("--channels", type=int, default=3, choices=[1, 3], help="Number of image channels: 1 (Grayscale), 3 (RGB)")
     parser.add_argument("--chunk-delay", type=float, default=0.0005, help="Delay between UDP chunks in seconds; use 0 to disable pacing")
     parser.add_argument("--bind-ip", type=str, default="", help="Local PC interface IP to send from, useful when Windows chooses the wrong NIC")
+    parser.add_argument("--chunk-size", type=int, default=DEFAULT_CHUNK_SIZE, help="UDP image payload bytes per packet; keep <= 1400 to avoid fragmentation")
     
     args = parser.parse_args()
-    stream_video(args.ip, args.port, args.source, args.fps, args.channels, args.chunk_delay, args.bind_ip)
+    stream_video(args.ip, args.port, args.source, args.fps, args.channels, args.chunk_delay, args.bind_ip, args.chunk_size)

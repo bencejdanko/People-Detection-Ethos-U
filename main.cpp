@@ -108,6 +108,11 @@ static void ConvertRgb888ToRgb565Frame(const uint8_t *src, uint16_t *dst)
     }
 }
 
+static uint32_t CyclesToMs(uint64_t cycles)
+{
+    return (uint32_t)((cycles * 1000ULL) / SystemCoreClock);
+}
+
 /* Initialize OpenMV (imlib) frame buffer */
 static void omv_init()
 {
@@ -426,6 +431,11 @@ static void vInferenceTask(void *pvParameters)
     uint64_t frameCount = 0;
     uint64_t lastTime = pmu_get_systick_Count();
     uint64_t currentFPS = 0;
+    uint32_t quantMs = 0;
+    uint32_t inferMs = 0;
+    uint32_t postMs = 0;
+    uint32_t drawMs = 0;
+    uint32_t lcdMs = 0;
 
     LOG_INFO("Inference Engine initialized. Stack high water mark: %u words remaining.", (unsigned int)uxTaskGetStackHighWaterMark(NULL));
     LOG_INFO("Waiting for incoming network video feed...");
@@ -436,6 +446,7 @@ static void vInferenceTask(void *pvParameters)
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
         // 1. Quantize the raw RGB pixels into the model input tensor (int8)
+        uint64_t stageStart = pmu_get_systick_Count();
         int8_t *signedInputData = inputTensor->data.int8;
 
         if (useFastInputQuant)
@@ -459,11 +470,15 @@ static void vInferenceTask(void *pvParameters)
                 signedInputData[i] = static_cast<int8_t>(quantized);
             }
         }
+        quantMs = CyclesToMs(pmu_get_systick_Count() - stageStart);
 
         // 2. Execute Ethos-U Accelerated Inference
+        stageStart = pmu_get_systick_Count();
         model.RunInference();
+        inferMs = CyclesToMs(pmu_get_systick_Count() - stageStart);
 
         // 3. Post-Process Grid heatmaps to get target peaks (person locations)
+        stageStart = pmu_get_systick_Count();
         const int8_t *outputData = outputTensor->data.int8;
         postProcessor.Process(
             outputData,
@@ -473,6 +488,7 @@ static void vInferenceTask(void *pvParameters)
             outQuantParams.offset,
             detections
         );
+        postMs = CyclesToMs(pmu_get_systick_Count() - stageStart);
 
         // 4. Update Metrics (FPS and Person Counts)
         frameCount++;
@@ -489,6 +505,7 @@ static void vInferenceTask(void *pvParameters)
         // 5. Visual Rendering on LCD Panel (if enabled)
 #if defined(__EBI_LCD_PANEL__)
         // Convert the raw RGB888 input frame directly to RGB565 at native 192x192.
+        stageStart = pmu_get_systick_Count();
         ConvertRgb888ToRgb565Frame(g_inferenceFrameBuffer, (uint16_t *)dstImg.data);
 
         // Draw crosshair indicators at each person peak
@@ -506,15 +523,25 @@ static void vInferenceTask(void *pvParameters)
 
         // Draw text overlay (FPS & count)
         char overlayText[64];
-        sprintf(overlayText, "FPS: %llu | Count: %d", currentFPS, (int)detections.size());
+        sprintf(overlayText, "FPS:%llu C:%d Q:%u I:%u P:%u D:%u L:%u",
+                currentFPS,
+                (int)detections.size(),
+                (unsigned int)quantMs,
+                (unsigned int)inferMs,
+                (unsigned int)postMs,
+                (unsigned int)drawMs,
+                (unsigned int)lcdMs);
         imlib_draw_string(&dstImg, 10, 10, overlayText, COLOR_R5_G6_B5_TO_RGB565(31, 31, 31), 2, 0, 0, false, false, false, false, 0, false, false);
+        drawMs = CyclesToMs(pmu_get_systick_Count() - stageStart);
 
         // Blit to screen
         sDispRect.u32TopLeftX = 0;
         sDispRect.u32TopLeftY = 0;
         sDispRect.u32BottonRightX = IMAGE_WIDTH - 1;
         sDispRect.u32BottonRightY = IMAGE_HEIGHT - 1;
+        stageStart = pmu_get_systick_Count();
         Display_FillRect((uint16_t *)dstImg.data, &sDispRect, 1);
+        lcdMs = CyclesToMs(pmu_get_systick_Count() - stageStart);
 #endif
     }
 }
