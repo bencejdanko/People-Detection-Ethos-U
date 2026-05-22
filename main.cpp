@@ -586,7 +586,10 @@ void HardFault_Handler_C(uint32_t *pulStackedRegisters)
     }
 
     printf("==================================================\r\n");
-    __BKPT(0);
+    // Only halt if a debugger is attached; otherwise just spin
+    if (CoreDebug->DHCSR & CoreDebug_DHCSR_C_DEBUGEN_Msk) {
+        __BKPT(0);
+    }
     while (1);
 }
 
