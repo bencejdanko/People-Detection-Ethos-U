@@ -2,6 +2,9 @@
 
 People counting solution for the NuMaker-X-M55M1D. Uses a UDP server to listen to camera feed over LAN, and an extremely efficient FOMO model to conduct people counting.
 
+* [Technical Report](https://docs.google.com/document/d/1819XO3czU8Z8Bpmk7attelKr136GNZ_pKRUPyuP5Vmg/edit?usp=sharing)
+* [Slide Deck](https://docs.google.com/presentation/d/1c7s3KPmj7XQssARVzuICO6-ltEVpFQYwPl5GAGwUMCI/edit?usp=sharing)
+
 ## Installation
 
 1. Prepare Model Weights:
