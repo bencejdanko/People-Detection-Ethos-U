@@ -21,6 +21,9 @@
 #endif
 
 static synopGMACdevice GMACdev = {0};
+static volatile uint32_t g_u32RxFrameCount = 0;
+static volatile uint32_t g_u32RxInputErrorCount = 0;
+static volatile uint32_t g_u32RxAllocDropCount = 0;
 #if (NVT_DCACHE_ON == 1)
 /* Descriptor and data buffer are placed in a non-cacheable region */
 NVT_NONCACHEABLE static DmaDesc tx_desc[TRANSMIT_DESC_SIZE] __attribute__((aligned(32))) = {0};
@@ -322,6 +325,7 @@ uint32_t EMAC_ReceivePkt(void)
 
     if ((len = synop_handle_received_data(&GMACdev, &psPktFrame)) > 0)
     {
+        g_u32RxFrameCount++;
         nu_emac_lwip_pbuf_t my_pbuf  = (nu_emac_lwip_pbuf_t)memp_malloc_pool(&memp_emac_rx);
 
         if (my_pbuf != NULL)
@@ -339,16 +343,19 @@ uint32_t EMAC_ReceivePkt(void)
             if (pbuf == NULL)
             {
                 printf("%s : failed to alloted\n", __func__);
+                g_u32RxAllocDropCount++;
             }
             else if (_netif->input(pbuf, _netif) != ERR_OK)
             {
                 LWIP_DEBUGF(NETIF_DEBUG, ("ethernetif_input: Input error\n"));
+                g_u32RxInputErrorCount++;
                 pbuf_free(pbuf);
             }
         }
         else
         {
             printf("LWIP_MEMPOOL_ALLOC < 0!!\n");
+            g_u32RxAllocDropCount++;
         }
     }
     else
@@ -357,6 +364,21 @@ uint32_t EMAC_ReceivePkt(void)
     }
 
     return len;
+}
+
+uint32_t EMAC_GetRxFrameCount(void)
+{
+    return g_u32RxFrameCount;
+}
+
+uint32_t EMAC_GetRxInputErrorCount(void)
+{
+    return g_u32RxInputErrorCount;
+}
+
+uint32_t EMAC_GetRxAllocDropCount(void)
+{
+    return g_u32RxAllocDropCount;
 }
 
 uint8_t *EMAC_AllocatePktBuf(void)

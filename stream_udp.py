@@ -14,6 +14,7 @@ import socket
 import struct
 import time
 import argparse
+import ipaddress
 
 # Protocol Specifications
 MAGIC_HEADER = b"FRME"  # 0x46524D45 in ASCII
@@ -21,9 +22,23 @@ CHUNK_SIZE = 1024      # Size of the payload chunk in bytes
 IMAGE_W = 192
 IMAGE_H = 192
 
-def stream_video(target_ip, target_port, source, fps, channels=3, chunk_delay=0.0005):
+def stream_video(target_ip, target_port, source, fps, channels=3, chunk_delay=0.0005, bind_ip=""):
     # Create UDP socket
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    if bind_ip:
+        sock.bind((bind_ip, 0))
+    sock.connect((target_ip, target_port))
+    local_ip, local_port = sock.getsockname()
+    print(f"[+] UDP route: {local_ip}:{local_port} -> {target_ip}:{target_port}")
+    try:
+        local_addr = ipaddress.ip_address(local_ip)
+        target_addr = ipaddress.ip_address(target_ip)
+        if local_addr.version == 4 and target_addr.version == 4:
+            same_24 = ipaddress.ip_network(f"{local_ip}/24", strict=False)
+            if target_addr not in same_24:
+                print(f"[!] Target is not in the sender's /24 subnet ({same_24}). Check the selected NIC or use --bind-ip.")
+    except ValueError:
+        pass
     
     # Initialize video capture (0 for default webcam, or string path to video file)
     if source.isdigit():
@@ -92,7 +107,7 @@ def stream_video(target_ip, target_port, source, fps, channels=3, chunk_delay=0.
                 )
                 
                 # Send header + payload chunk
-                sock.sendto(header + chunk_payload, (target_ip, target_port))
+                sock.send(header + chunk_payload)
                 if chunk_delay > 0:
                     time.sleep(chunk_delay)
             
@@ -125,6 +140,7 @@ if __name__ == "__main__":
     parser.add_argument("--fps", type=int, default=15, help="Frames per second to stream")
     parser.add_argument("--channels", type=int, default=3, choices=[1, 3], help="Number of image channels: 1 (Grayscale), 3 (RGB)")
     parser.add_argument("--chunk-delay", type=float, default=0.0005, help="Delay between UDP chunks in seconds; use 0 to disable pacing")
+    parser.add_argument("--bind-ip", type=str, default="", help="Local PC interface IP to send from, useful when Windows chooses the wrong NIC")
     
     args = parser.parse_args()
-    stream_video(args.ip, args.port, args.source, args.fps, args.channels, args.chunk_delay)
+    stream_video(args.ip, args.port, args.source, args.fps, args.channels, args.chunk_delay, args.bind_ip)

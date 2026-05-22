@@ -24,6 +24,7 @@ extern "C" {
 #include "netif/ethernetif.h"
 #include "lwip/api.h"
 #include "lwip/def.h"
+#include "emac.h"
 }
 
 /* Board and BSP includes */
@@ -183,6 +184,11 @@ static void vUdpVideoReceiverTask(void *pvParameters)
                          (unsigned int)badLengthPackets,
                          (unsigned int)badOffsetPackets,
                          (unsigned int)staleFramePackets);
+                LOG_INFO("EMAC RX heartbeat: frames=%u input_errors=%u alloc_drops=%u netif_flags=0x%02x",
+                         (unsigned int)EMAC_GetRxFrameCount(),
+                         (unsigned int)EMAC_GetRxInputErrorCount(),
+                         (unsigned int)EMAC_GetRxAllocDropCount(),
+                         (unsigned int)g_netif.flags);
                 if (packetsReceived == lastReportedPackets)
                 {
                     LOG_INFO("UDP RX heartbeat: no packets arrived in the last 5 seconds.");
