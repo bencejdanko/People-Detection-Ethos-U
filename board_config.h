@@ -23,7 +23,7 @@
 
 /* --- SYSTEM LOGGING CONFIGURATION --- */
 #define ENABLE_SERIAL_LOGS         1   // Toggle 1/0 to enable/disable serial logging
-#define ENABLE_INFO_LOGS           1   // Toggle 1/0 to enable/disable detailed [INFO] logs
+#define ENABLE_INFO_LOGS           0   // Toggle 1/0 to enable/disable detailed [INFO] logs
 #define ENABLE_ERR_LOGS            1   // Toggle 1/0 to enable/disable [ERROR] logs
 
 #if ENABLE_SERIAL_LOGS

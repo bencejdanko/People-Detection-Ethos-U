@@ -93,6 +93,21 @@ char *_fb_end = NULL;
 char *_jpeg_buf = NULL;
 char *_fballoc = NULL;
 
+static inline uint16_t Rgb888ToRgb565(const uint8_t *pixel)
+{
+    return (uint16_t)(((uint16_t)(pixel[0] & 0xF8) << 8) |
+                      ((uint16_t)(pixel[1] & 0xFC) << 3) |
+                      ((uint16_t)pixel[2] >> 3));
+}
+
+static void ConvertRgb888ToRgb565Frame(const uint8_t *src, uint16_t *dst)
+{
+    for (uint32_t i = 0; i < (IMAGE_WIDTH * IMAGE_HEIGHT); ++i)
+    {
+        dst[i] = Rgb888ToRgb565(src + (i * IMAGE_CHANNELS));
+    }
+}
+
 /* Initialize OpenMV (imlib) frame buffer */
 static void omv_init()
 {
@@ -385,22 +400,19 @@ static void vInferenceTask(void *pvParameters)
 
     std::vector<arm::app::model::Detection> detections;
     
-    // OpenMV Image structs for display
-    image_t srcImg;
-    srcImg.w = IMAGE_WIDTH;
-    srcImg.h = IMAGE_HEIGHT;
-    srcImg.size = FRAME_BUFFER_SIZE;
-    srcImg.pixfmt = (IMAGE_CHANNELS == 3) ? PIXFORMAT_RGB888 : PIXFORMAT_GRAYSCALE;
-    
+    const bool useFastInputQuant =
+        (IMAGE_CHANNELS == 3) &&
+        (inQuantParams.offset == -1) &&
+        (inQuantParams.scale > 0.007f) &&
+        (inQuantParams.scale < 0.0085f);
+
+    // OpenMV image struct for overlays/text on the scaled display buffer.
     image_t dstImg;
-    dstImg.w = 320;
-    dstImg.h = 240;
-    dstImg.size = IMAGE_FB_SIZE;
+    dstImg.w = IMAGE_WIDTH;
+    dstImg.h = IMAGE_HEIGHT;
+    dstImg.size = IMAGE_WIDTH * IMAGE_HEIGHT * 2;
     dstImg.pixfmt = PIXFORMAT_RGB565;
     dstImg.data = (uint8_t *)frame_buf1;
-
-    rectangle_t roi;
-    roi.x = 0; roi.y = 0; roi.w = IMAGE_WIDTH; roi.h = IMAGE_HEIGHT;
 
 #if defined(__EBI_LCD_PANEL__)
     S_DISP_RECT sDispRect;
@@ -423,22 +435,29 @@ static void vInferenceTask(void *pvParameters)
         // Wait for UDP receiver to signal a complete frame
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
-        // 1. Quantize the raw grayscale pixels into the model input tensor (int8)
+        // 1. Quantize the raw RGB pixels into the model input tensor (int8)
         int8_t *signedInputData = inputTensor->data.int8;
-        
-        for (int i = 0; i < FRAME_BUFFER_SIZE; ++i)
+
+        if (useFastInputQuant)
         {
-            float pixelFloat = static_cast<float>(g_inferenceFrameBuffer[i]);
-            
-            // Adapt to trained normalization: [0, 1] vs raw [0, 255]
-            float normalized = (inQuantParams.scale < 0.05f) ? (pixelFloat / 255.0f) : pixelFloat;
-            int32_t quantized = static_cast<int32_t>(roundf(normalized / inQuantParams.scale)) + inQuantParams.offset;
-            
-            // Clip to int8 boundaries
-            if (quantized < -128) quantized = -128;
-            if (quantized > 127)  quantized = 127;
-            
-            signedInputData[i] = static_cast<int8_t>(quantized);
+            for (int i = 0; i < FRAME_BUFFER_SIZE; ++i)
+            {
+                signedInputData[i] = static_cast<int8_t>((((uint16_t)g_inferenceFrameBuffer[i] + 1U) >> 1) - 1);
+            }
+        }
+        else
+        {
+            for (int i = 0; i < FRAME_BUFFER_SIZE; ++i)
+            {
+                float pixelFloat = static_cast<float>(g_inferenceFrameBuffer[i]);
+                float normalized = (inQuantParams.scale < 0.05f) ? (pixelFloat / 255.0f) : pixelFloat;
+                int32_t quantized = static_cast<int32_t>(roundf(normalized / inQuantParams.scale)) + inQuantParams.offset;
+
+                if (quantized < -128) quantized = -128;
+                if (quantized > 127)  quantized = 127;
+
+                signedInputData[i] = static_cast<int8_t>(quantized);
+            }
         }
 
         // 2. Execute Ethos-U Accelerated Inference
@@ -469,16 +488,14 @@ static void vInferenceTask(void *pvParameters)
 
         // 5. Visual Rendering on LCD Panel (if enabled)
 #if defined(__EBI_LCD_PANEL__)
-        // Decompress/Upscale raw grayscale buffer to RGB565 LCD size
-        srcImg.data = g_inferenceFrameBuffer;
-        imlib_nvt_scale(&srcImg, &dstImg, &roi);
+        // Convert the raw RGB888 input frame directly to RGB565 at native 192x192.
+        ConvertRgb888ToRgb565Frame(g_inferenceFrameBuffer, (uint16_t *)dstImg.data);
 
         // Draw crosshair indicators at each person peak
         for (const auto& det : detections)
         {
-            // Map 192x192 model coordinates to 320x240 LCD coordinates
-            int x_disp = static_cast<int>(det.x * (320.0f / 192.0f));
-            int y_disp = static_cast<int>(det.y * (240.0f / 192.0f));
+            int x_disp = static_cast<int>(det.x);
+            int y_disp = static_cast<int>(det.y);
 
             // Draw a bounding crosshair around the detected center peak
             imlib_draw_rectangle(&dstImg, x_disp - 8, y_disp - 8, 16, 16, COLOR_R5_G6_B5_TO_RGB565(31, 0, 0), 2, false);
@@ -495,8 +512,8 @@ static void vInferenceTask(void *pvParameters)
         // Blit to screen
         sDispRect.u32TopLeftX = 0;
         sDispRect.u32TopLeftY = 0;
-        sDispRect.u32BottonRightX = 319;
-        sDispRect.u32BottonRightY = 239;
+        sDispRect.u32BottonRightX = IMAGE_WIDTH - 1;
+        sDispRect.u32BottonRightY = IMAGE_HEIGHT - 1;
         Display_FillRect((uint16_t *)dstImg.data, &sDispRect, 1);
 #endif
     }
