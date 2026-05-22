@@ -127,6 +127,14 @@ static void vUdpVideoReceiverTask(void *pvParameters)
     struct netconn *conn;
     err_t err;
     struct netbuf *buf;
+    uint32_t packetsReceived = 0;
+    uint32_t validChunks = 0;
+    uint32_t completedFrames = 0;
+    uint32_t shortPackets = 0;
+    uint32_t badMagicPackets = 0;
+    uint32_t badLengthPackets = 0;
+    uint32_t badOffsetPackets = 0;
+    uint32_t staleFramePackets = 0;
     
     LOG_INFO("UDP Video Receiver Task started.");
 
@@ -149,63 +157,117 @@ static void vUdpVideoReceiverTask(void *pvParameters)
 
     LOG_INFO("UDP server listening on port %d...", UDP_STREAM_PORT);
     LOG_INFO("UdpRecv stack high water mark: %u words remaining.", (unsigned int)uxTaskGetStackHighWaterMark(NULL));
+    netconn_set_recvtimeout(conn, 5000);
 
     uint32_t activeFrameId = 0xFFFFFFFF;
     uint32_t accumulatedBytes = 0;
+    uint32_t lastReportedPackets = 0;
 
     while (1)
     {
-        // Receive packet (blocks until data arrives)
-        if (netconn_recv(conn, &buf) == ERR_OK)
+        err = netconn_recv(conn, &buf);
+        if (err == ERR_TIMEOUT)
         {
-            uint16_t packetLen = buf->p->len;
-            
-            // Validate packet size (must contain at least the 20-byte header)
-            if (packetLen >= sizeof(PacketHeader))
+            LOG_INFO("UDP RX heartbeat: packets=%u valid_chunks=%u completed_frames=%u partial=%u/%u short=%u bad_magic=%u bad_len=%u bad_offset=%u stale=%u",
+                     (unsigned int)packetsReceived,
+                     (unsigned int)validChunks,
+                     (unsigned int)completedFrames,
+                     (unsigned int)accumulatedBytes,
+                     (unsigned int)FRAME_BUFFER_SIZE,
+                     (unsigned int)shortPackets,
+                     (unsigned int)badMagicPackets,
+                     (unsigned int)badLengthPackets,
+                     (unsigned int)badOffsetPackets,
+                     (unsigned int)staleFramePackets);
+            if (packetsReceived == lastReportedPackets)
             {
-                PacketHeader *header = (PacketHeader *)buf->p->payload;
-                
-                // Parse Network Byte Order (Big Endian) to Host Byte Order
-                uint32_t magic = ntohl(header->magic);
-                uint32_t frameId = ntohl(header->frame_id);
-                uint32_t totalLen = ntohl(header->total_len);
-                uint32_t chunkOffset = ntohl(header->chunk_offset);
-                uint32_t chunkLen = ntohl(header->chunk_len);
+                LOG_INFO("UDP RX heartbeat: no packets arrived in the last 5 seconds.");
+            }
+            lastReportedPackets = packetsReceived;
+            continue;
+        }
+        else if (err != ERR_OK)
+        {
+            LOG_ERROR("UDP receive failed: lwIP err=%d", (int)err);
+            vTaskDelay(pdMS_TO_TICKS(1000));
+            continue;
+        }
 
-                // 1. Verify Magic header and total length compatibility
-                if (magic == UDP_MAGIC_HEADER && totalLen == FRAME_BUFFER_SIZE)
+        packetsReceived++;
+
+        if (buf->p == NULL)
+        {
+            shortPackets++;
+            netbuf_delete(buf);
+            continue;
+        }
+
+        uint16_t packetLen = buf->p->tot_len;
+        
+        // Validate packet size (must contain at least the 20-byte header)
+        if (packetLen >= sizeof(PacketHeader))
+        {
+            PacketHeader *header = (PacketHeader *)buf->p->payload;
+            
+            // Parse Network Byte Order (Big Endian) to Host Byte Order
+            uint32_t magic = ntohl(header->magic);
+            uint32_t frameId = ntohl(header->frame_id);
+            uint32_t totalLen = ntohl(header->total_len);
+            uint32_t chunkOffset = ntohl(header->chunk_offset);
+            uint32_t chunkLen = ntohl(header->chunk_len);
+
+            if (magic != UDP_MAGIC_HEADER)
+            {
+                badMagicPackets++;
+            }
+            else if (totalLen != FRAME_BUFFER_SIZE)
+            {
+                badLengthPackets++;
+            }
+            else if ((chunkOffset + chunkLen) > FRAME_BUFFER_SIZE ||
+                     packetLen < (sizeof(PacketHeader) + chunkLen))
+            {
+                badOffsetPackets++;
+            }
+            else
+            {
+                // Start a new frame if chunk_offset is 0.
+                if (chunkOffset == 0)
                 {
-                    // 2. Start a new frame if chunk_offset is 0
-                    if (chunkOffset == 0)
-                    {
-                        activeFrameId = frameId;
-                        accumulatedBytes = 0;
-                    }
+                    activeFrameId = frameId;
+                    accumulatedBytes = 0;
+                }
 
-                    // 3. Write chunk to active frame buffer
-                    if (frameId == activeFrameId && (chunkOffset + chunkLen) <= FRAME_BUFFER_SIZE)
-                    {
-                        uint8_t *payloadData = (uint8_t *)buf->p->payload + sizeof(PacketHeader);
-                        memcpy(g_networkFrameBuffer + chunkOffset, payloadData, chunkLen);
-                        accumulatedBytes += chunkLen;
+                if (frameId == activeFrameId)
+                {
+                    uint8_t *payloadData = (uint8_t *)buf->p->payload + sizeof(PacketHeader);
+                    memcpy(g_networkFrameBuffer + chunkOffset, payloadData, chunkLen);
+                    accumulatedBytes += chunkLen;
+                    validChunks++;
 
-                        // 4. Frame complete check
-                        if (accumulatedBytes == FRAME_BUFFER_SIZE)
+                    if (accumulatedBytes == FRAME_BUFFER_SIZE)
+                    {
+                        memcpy(g_inferenceFrameBuffer, g_networkFrameBuffer, FRAME_BUFFER_SIZE);
+                        completedFrames++;
+                        
+                        if (xInferenceTaskHandle != NULL)
                         {
-                            // Copy to Inference Frame Buffer
-                            memcpy(g_inferenceFrameBuffer, g_networkFrameBuffer, FRAME_BUFFER_SIZE);
-                            
-                            // Notify the inference task
-                            if (xInferenceTaskHandle != NULL)
-                            {
-                                xTaskNotifyGive(xInferenceTaskHandle);
-                            }
+                            xTaskNotifyGive(xInferenceTaskHandle);
                         }
                     }
                 }
+                else
+                {
+                    staleFramePackets++;
+                }
             }
-            netbuf_delete(buf);
         }
+        else
+        {
+            shortPackets++;
+        }
+
+        netbuf_delete(buf);
     }
 }
 
