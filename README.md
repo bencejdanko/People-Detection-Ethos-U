@@ -21,3 +21,15 @@ Stream a live feed from the default webcam (`0`):
 ```bash
 python3 stream_udp.py --port 5005 --source 0 --fps 15 --chunk-size 1450 --chunk-delay 0.0005
 ```
+
+### Run Streamer from Raspberry Pi
+
+```
+# install cv2 globally
+sudo apt install python3-opencv
+sudo apt install gstreamer1.0-libcamera gstreamer1.0-plugins-good
+```
+
+```
+python3 stream_udp_picam.py --ip 192.168.0.10 --port 5005 --source 0 --fps 15 --chunk-size 1450 --chunk-delay 0.0005
+```
