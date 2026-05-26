@@ -29,6 +29,7 @@ python3 stream_udp.py --port 5005 --source 0 --fps 15 --chunk-size 1450 --chunk-
 ```
 # install cv2 globally
 sudo apt install python3-opencv
+sudo apt install python3-picamera2
 sudo apt install gstreamer1.0-libcamera gstreamer1.0-plugins-good
 ```
 

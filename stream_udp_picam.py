@@ -2,10 +2,10 @@
 """
 ================================================================================
 Host PC UDP Video Streamer for NuMaker-X-M55M1D Edge AI People Counting
-(Modified for Headless Raspberry Pi Zero with libcamera support)
+(Modified for headless Raspberry Pi with Picamera2/libcamera support)
 ================================================================================
 This script captures video from a local webcam or file, processes it, and
-streams raw grayscale frames over the network to the M55M1 board using a robust,
+streams raw RGB/grayscale frames over the network to the M55M1 board using a robust,
 custom UDP chunking protocol.
 ================================================================================
 """
@@ -23,7 +23,115 @@ DEFAULT_CHUNK_SIZE = 1400  # Safe for 1500-byte Ethernet MTU with UDP/app header
 IMAGE_W = 192
 IMAGE_H = 192
 
-def stream_video(target_ip, target_port, source, fps, channels=3, chunk_delay=0.0005, bind_ip="", chunk_size=DEFAULT_CHUNK_SIZE):
+class OpenCVCapture:
+    def __init__(self, cap, is_camera):
+        self.cap = cap
+        self.is_camera = is_camera
+        self.color_order = "BGR"
+
+    def read(self):
+        return self.cap.read()
+
+    def is_opened(self):
+        return self.cap.isOpened()
+
+    def restart(self):
+        self.cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+
+    def release(self):
+        self.cap.release()
+
+
+class Picamera2Capture:
+    def __init__(self, picam2):
+        self.picam2 = picam2
+        self.is_camera = True
+        self.color_order = "RGB"
+
+    def read(self):
+        return True, self.picam2.capture_array()
+
+    def is_opened(self):
+        return True
+
+    def restart(self):
+        pass
+
+    def release(self):
+        self.picam2.stop()
+        self.picam2.close()
+
+
+def open_picamera2_capture(fps):
+    try:
+        from picamera2 import Picamera2
+    except ImportError:
+        print("[!] Picamera2 is not installed. Falling back to OpenCV/GStreamer.")
+        return None
+
+    try:
+        picam2 = Picamera2()
+        config = picam2.create_video_configuration(
+            main={"size": (IMAGE_W, IMAGE_H), "format": "RGB888"},
+            buffer_count=3,
+        )
+        picam2.configure(config)
+        frame_time_us = int(1_000_000 / fps)
+        picam2.set_controls({"FrameDurationLimits": (frame_time_us, frame_time_us)})
+        picam2.start()
+        print("[+] Initialized Picamera2 at 192x192 RGB888.")
+        return Picamera2Capture(picam2)
+    except Exception as exc:
+        print(f"[!] Picamera2 initialization failed: {exc}")
+        return None
+
+
+def open_opencv_capture(source, fps):
+    if source == "0" or source == 0:
+        gst_pipeline = (
+            "libcamerasrc ! "
+            f"video/x-raw,width={IMAGE_W},height={IMAGE_H},framerate={fps}/1 ! "
+            "videoconvert ! video/x-raw,format=BGR ! "
+            "appsink max-buffers=1 drop=true sync=false"
+        )
+        print("[+] Initializing libcamera via 192x192 GStreamer pipeline...")
+        cap = cv2.VideoCapture(gst_pipeline, cv2.CAP_GSTREAMER)
+
+        if not cap.isOpened():
+            print("[!] GStreamer pipeline failed. Falling back to standard V4L2...")
+            cap = cv2.VideoCapture(0)
+
+        return OpenCVCapture(cap, is_camera=True)
+
+    if isinstance(source, str) and source.isdigit():
+        source = int(source)
+    return OpenCVCapture(cv2.VideoCapture(source), is_camera=False)
+
+
+def open_capture(source, fps, prefer_picamera2=True):
+    if prefer_picamera2 and (source == "0" or source == 0):
+        capture = open_picamera2_capture(fps)
+        if capture is not None:
+            return capture
+
+    return open_opencv_capture(source, fps)
+
+
+def prepare_frame(frame, color_order, channels):
+    if frame.shape[1] != IMAGE_W or frame.shape[0] != IMAGE_H:
+        frame = cv2.resize(frame, (IMAGE_W, IMAGE_H))
+
+    if channels == 3:
+        if color_order == "RGB":
+            return frame
+        return cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
+    if color_order == "RGB":
+        return cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+    return cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+
+def stream_video(target_ip, target_port, source, fps, channels=3, chunk_delay=0.0, bind_ip="", chunk_size=DEFAULT_CHUNK_SIZE):
     # Create UDP socket
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     if bind_ip:
@@ -41,28 +149,13 @@ def stream_video(target_ip, target_port, source, fps, channels=3, chunk_delay=0.
     except ValueError:
         pass
 
-    # Initialize video capture with libcamera GStreamer pipeline for Raspberry Pi
-    if source == "0" or source == 0:
-        gst_pipeline = (
-            "libcamerasrc ! "
-            "video/x-raw, width=640, height=480, framerate={}/1 ! "
-            "videoconvert ! appsink drop=true sync=false"
-        ).format(fps)
-        print("[+] Initializing libcamera via GStreamer pipeline...")
-        cap = cv2.VideoCapture(gst_pipeline, cv2.CAP_GSTREAMER)
+    capture = open_capture(source, fps)
 
-        # Fallback to standard V4L2 if OpenCV wasn't built with GStreamer
-        if not cap.isOpened():
-            print("[!] GStreamer pipeline failed. Falling back to standard V4L2...")
-            cap = cv2.VideoCapture(0)
-    else:
-        if isinstance(source, str) and source.isdigit():
-            source = int(source)
-        cap = cv2.VideoCapture(source)
-
-    if not cap.isOpened():
+    if not capture.is_opened():
         print(f"[-] Error: Could not open video source: {source}")
-        print("[-] Tip: If using fallback, try running the script with: libcamerify python3 streamer.py")
+        print("[-] Tip: Install Picamera2, or try running the OpenCV fallback with: libcamerify python3 stream_udp_picam.py")
+        capture.release()
+        sock.close()
         return
 
     frame_size = IMAGE_W * IMAGE_H * channels
@@ -78,29 +171,19 @@ def stream_video(target_ip, target_port, source, fps, channels=3, chunk_delay=0.
     try:
         while True:
             start_time = time.time()
-            ret, frame = cap.read()
+            ret, frame = capture.read()
             if not ret:
-                if isinstance(source, str) and not source.isdigit():
-                    cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+                if not capture.is_camera:
+                    capture.restart()
                     continue
-                else:
-                    print("[-] Failed to capture frame from camera.")
-                    break
+                print("[-] Failed to capture frame from camera.")
+                break
 
-            # 1. Preprocess: Resize to 192x192
-            resized = cv2.resize(frame, (IMAGE_W, IMAGE_H))
+            processed_img = prepare_frame(frame, capture.color_order, channels)
 
-            # 2. Format conversion
-            if channels == 3:
-                processed_img = cv2.cvtColor(resized, cv2.COLOR_BGR2RGB)
-            else:
-                processed_img = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
-
-            # 3. Get raw byte array
             raw_bytes = processed_img.tobytes()
             assert len(raw_bytes) == frame_size, f"Invalid frame size: {len(raw_bytes)} (expected {frame_size})"
 
-            # 4. Stream frame in chunks
             num_chunks = (frame_size + chunk_size - 1) // chunk_size
 
             for i in range(num_chunks):
@@ -135,7 +218,7 @@ def stream_video(target_ip, target_port, source, fps, channels=3, chunk_delay=0.
     except KeyboardInterrupt:
         print("\n[+] Stream stopped by user (Ctrl+C).")
     finally:
-        cap.release()
+        capture.release()
         sock.close()
         print("[+] Stream closed.")
 
@@ -146,7 +229,7 @@ if __name__ == "__main__":
     parser.add_argument("--source", type=str, default="0", help="Webcam ID (e.g. '0') or path to video file")
     parser.add_argument("--fps", type=int, default=15, help="Frames per second to stream")
     parser.add_argument("--channels", type=int, default=3, choices=[1, 3], help="Number of image channels: 1 (Grayscale), 3 (RGB)")
-    parser.add_argument("--chunk-delay", type=float, default=0.0005, help="Delay between UDP chunks in seconds; use 0 to disable pacing")
+    parser.add_argument("--chunk-delay", type=float, default=0.0, help="Delay between UDP chunks in seconds; use 0 to disable pacing")
     parser.add_argument("--bind-ip", type=str, default="", help="Local PC interface IP to send from")
     parser.add_argument("--chunk-size", type=int, default=DEFAULT_CHUNK_SIZE, help="UDP image payload bytes per packet")
 
