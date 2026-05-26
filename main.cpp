@@ -61,6 +61,7 @@ static TaskHandle_t xInferenceTaskHandle = NULL;
 
 /* Network interface structure */
 struct netif g_netif;
+static char g_deviceIpAddress[IPADDR_STRLEN_MAX] = "0.0.0.0";
 
 /* --- FRAME BUFFER MEMORY ALLOCATION --- */
 __attribute__((section(".bss.hyperram.data"), aligned(32))) static uint8_t g_udpFrameBuffers[3][FRAME_BUFFER_SIZE];
@@ -101,6 +102,102 @@ static inline uint16_t Rgb888ToRgb565(const uint8_t *pixel)
 static uint16_t s_displayXMap[LCD_DISPLAY_WIDTH];
 static uint16_t s_displayYMap[LCD_DISPLAY_HEIGHT];
 
+#if defined(__EBI_LCD_PANEL__)
+static const int kStatusTextScale = 4;
+static const int kStatusTextMargin = 16;
+static const int kStatusTextLineHeight = FONT_HTIGHT * kStatusTextScale + 8;
+static const int kStatusTextColor = COLOR_R5_G6_B5_TO_RGB565(31, 63, 31);
+static const int kStatusBackgroundColor = COLOR_R5_G6_B5_TO_RGB565(0, 0, 0);
+
+static void CopyDeviceIpAddress(char *dst, size_t dstSize)
+{
+    if (dstSize == 0)
+    {
+        return;
+    }
+
+    if (xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED)
+    {
+        taskENTER_CRITICAL();
+    }
+    strncpy(dst, g_deviceIpAddress, dstSize - 1);
+    dst[dstSize - 1] = '\0';
+    if (xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED)
+    {
+        taskEXIT_CRITICAL();
+    }
+}
+
+static int StatusTextX(const char *text)
+{
+    const int textWidth = (int)strlen(text) * FONT_WIDTH * kStatusTextScale;
+    const int x = LCD_DISPLAY_WIDTH - kStatusTextMargin - textWidth;
+
+    return (x > kStatusTextMargin) ? x : kStatusTextMargin;
+}
+
+static void DrawStatusOverlay(image_t *img, uint64_t fps, size_t peopleCount)
+{
+    char ipAddress[IPADDR_STRLEN_MAX];
+    char lines[3][40];
+
+    CopyDeviceIpAddress(ipAddress, sizeof(ipAddress));
+
+    sprintf(lines[0], "FPS: %llu", fps);
+    sprintf(lines[1], "PEOPLE: %d", (int)peopleCount);
+    sprintf(lines[2], "IP: %s", ipAddress);
+
+    int overlayWidth = 0;
+    for (size_t i = 0; i < 3; ++i)
+    {
+        const int lineWidth = (int)strlen(lines[i]) * FONT_WIDTH * kStatusTextScale;
+        if (lineWidth > overlayWidth)
+        {
+            overlayWidth = lineWidth;
+        }
+    }
+    overlayWidth += kStatusTextMargin;
+
+    int overlayX = LCD_DISPLAY_WIDTH - kStatusTextMargin - overlayWidth;
+    if (overlayX < kStatusTextMargin)
+    {
+        overlayX = kStatusTextMargin;
+        overlayWidth = LCD_DISPLAY_WIDTH - (kStatusTextMargin * 2);
+    }
+    const int overlayHeight = (kStatusTextLineHeight * 3) + kStatusTextMargin;
+    imlib_draw_rectangle(img,
+                         overlayX,
+                         kStatusTextMargin,
+                         overlayWidth,
+                         overlayHeight,
+                         kStatusBackgroundColor,
+                         1,
+                         true);
+
+    imlib_draw_string(img, StatusTextX(lines[0]), kStatusTextMargin, lines[0], kStatusTextColor, kStatusTextScale, 0, 0, false, false, false, false, 0, false, false);
+    imlib_draw_string(img, StatusTextX(lines[1]), kStatusTextMargin + kStatusTextLineHeight, lines[1], kStatusTextColor, kStatusTextScale, 0, 0, false, false, false, false, 0, false, false);
+    imlib_draw_string(img, StatusTextX(lines[2]), kStatusTextMargin + (kStatusTextLineHeight * 2), lines[2], kStatusTextColor, kStatusTextScale, 0, 0, false, false, false, false, 0, false, false);
+}
+
+static void DrawStatusScreen(uint64_t fps, size_t peopleCount)
+{
+    char ipAddress[IPADDR_STRLEN_MAX];
+    char line[40];
+
+    CopyDeviceIpAddress(ipAddress, sizeof(ipAddress));
+    Display_ClearLCD(C_BLACK);
+
+    sprintf(line, "FPS: %llu", fps);
+    Display_PutText(line, strlen(line), StatusTextX(line), kStatusTextMargin, C_WHITE, C_BLACK, false, kStatusTextScale);
+
+    sprintf(line, "PEOPLE: %d", (int)peopleCount);
+    Display_PutText(line, strlen(line), StatusTextX(line), kStatusTextMargin + kStatusTextLineHeight, C_WHITE, C_BLACK, false, kStatusTextScale);
+
+    sprintf(line, "IP: %s", ipAddress);
+    Display_PutText(line, strlen(line), StatusTextX(line), kStatusTextMargin + (kStatusTextLineHeight * 2), C_WHITE, C_BLACK, false, kStatusTextScale);
+}
+#endif
+
 static void ConvertRgb888ToRgb565Scaled(const uint8_t *src, uint16_t *dst, uint32_t dstWidth, uint32_t dstHeight)
 {
     static bool mapsInitialized = false;
@@ -130,11 +227,6 @@ static void ConvertRgb888ToRgb565Scaled(const uint8_t *src, uint16_t *dst, uint3
             dstRow[x] = Rgb888ToRgb565(srcRow + (s_displayXMap[x] * IMAGE_CHANNELS));
         }
     }
-}
-
-static uint32_t CyclesToMs(uint64_t cycles)
-{
-    return (uint32_t)((cycles * 1000ULL) / SystemCoreClock);
 }
 
 /* Initialize OpenMV (imlib) frame buffer */
@@ -385,22 +477,11 @@ static void vInferenceTask(void *pvParameters)
 
 #if defined(__EBI_LCD_PANEL__)
     S_DISP_RECT sDispRect;
-    LOG_INFO("Initializing LCD panel...");
-    Display_Init();
-    LOG_INFO("LCD panel initialization returned. Clearing LCD...");
-    Display_ClearLCD(C_WHITE);
-    LOG_INFO("LCD clear complete.");
 #endif
 
     uint64_t frameCount = 0;
     uint64_t lastTime = pmu_get_systick_Count();
     uint64_t currentFPS = 0;
-    uint32_t quantMs = 0;
-    uint32_t inferMs = 0;
-    uint32_t postMs = 0;
-    uint32_t drawMs = 0;
-    uint32_t lcdMs = 0;
-    uint32_t loopMs = 0;
 
     LOG_INFO("Inference Engine initialized. Stack high water mark: %u words remaining.", (unsigned int)uxTaskGetStackHighWaterMark(NULL));
     LOG_INFO("Waiting for incoming network video feed...");
@@ -420,10 +501,8 @@ static void vInferenceTask(void *pvParameters)
         }
 
         const uint8_t *inferenceFrame = g_udpFrameBuffers[frameBufferIndex];
-        uint64_t loopStart = pmu_get_systick_Count();
 
         // 1. Quantize the raw RGB pixels into the model input tensor (int8)
-        uint64_t stageStart = pmu_get_systick_Count();
         int8_t *signedInputData = inputTensor->data.int8;
 
         if (useFastInputQuant)
@@ -447,15 +526,11 @@ static void vInferenceTask(void *pvParameters)
                 signedInputData[i] = static_cast<int8_t>(quantized);
             }
         }
-        quantMs = CyclesToMs(pmu_get_systick_Count() - stageStart);
 
         // 2. Execute Ethos-U Accelerated Inference
-        stageStart = pmu_get_systick_Count();
         model.RunInference();
-        inferMs = CyclesToMs(pmu_get_systick_Count() - stageStart);
 
         // 3. Post-Process Grid heatmaps to get target peaks (person locations)
-        stageStart = pmu_get_systick_Count();
         const int8_t *outputData = outputTensor->data.int8;
         postProcessor.Process(
             outputData,
@@ -467,7 +542,6 @@ static void vInferenceTask(void *pvParameters)
             MODEL_MAX_DETECTIONS,
             detectionCount
         );
-        postMs = CyclesToMs(pmu_get_systick_Count() - stageStart);
 
         // 4. Update Metrics (FPS and Person Counts)
         frameCount++;
@@ -484,7 +558,6 @@ static void vInferenceTask(void *pvParameters)
         // 5. Visual Rendering on LCD Panel (if enabled)
 #if defined(__EBI_LCD_PANEL__)
         // Scale the raw RGB888 input frame to fill the LCD and convert to RGB565.
-        stageStart = pmu_get_systick_Count();
         ConvertRgb888ToRgb565Scaled(inferenceFrame,
                                     (uint16_t *)dstImg.data,
                                     LCD_DISPLAY_WIDTH,
@@ -515,32 +588,14 @@ static void vInferenceTask(void *pvParameters)
             imlib_draw_rectangle(&dstImg, x_disp - 1, y_disp - 1, 2, 2, COLOR_R5_G6_B5_TO_RGB565(31, 31, 0), 1, true);
         }
 
-        // Draw text overlay (FPS & count)
-        char overlayText[64];
-        sprintf(overlayText, "F%llu C%d T%u",
-                currentFPS,
-                (int)detectionCount,
-                (unsigned int)loopMs);
-        imlib_draw_string(&dstImg, 2, 2, overlayText, COLOR_R5_G6_B5_TO_RGB565(31, 31, 31), 1, 0, 0, false, false, false, false, 0, false, false);
-
-        sprintf(overlayText, "Q%u I%u P%u D%u L%u",
-                (unsigned int)quantMs,
-                (unsigned int)inferMs,
-                (unsigned int)postMs,
-                (unsigned int)drawMs,
-                (unsigned int)lcdMs);
-        imlib_draw_string(&dstImg, 2, 14, overlayText, COLOR_R5_G6_B5_TO_RGB565(31, 31, 31), 1, 0, 0, false, false, false, false, 0, false, false);
-        drawMs = CyclesToMs(pmu_get_systick_Count() - stageStart);
+        DrawStatusOverlay(&dstImg, currentFPS, detectionCount);
 
         // Blit to screen
         sDispRect.u32TopLeftX = 0;
         sDispRect.u32TopLeftY = 0;
         sDispRect.u32BottonRightX = LCD_DISPLAY_WIDTH - 1;
         sDispRect.u32BottonRightY = LCD_DISPLAY_HEIGHT - 1;
-        stageStart = pmu_get_systick_Count();
         Display_FillRect((uint16_t *)dstImg.data, &sDispRect, 1);
-        lcdMs = CyclesToMs(pmu_get_systick_Count() - stageStart);
-        loopMs = CyclesToMs(pmu_get_systick_Count() - loopStart);
 #endif
         taskENTER_CRITICAL();
         if (g_processingFrameBufferIndex == frameBufferIndex)
@@ -614,6 +669,13 @@ static void vNetworkInitTask(void *pvParameters)
     LOG_INFO("  Subnet mask:     %s", ip4addr_ntoa(&g_netif.netmask));
     LOG_INFO("  Default gateway: %s", ip4addr_ntoa(&g_netif.gw));
 
+#if defined(__EBI_LCD_PANEL__)
+    taskENTER_CRITICAL();
+    ipaddr_ntoa_r(&g_netif.ip_addr, g_deviceIpAddress, sizeof(g_deviceIpAddress));
+    taskEXIT_CRITICAL();
+    DrawStatusScreen(0, 0);
+#endif
+
     LOG_INFO("Registering raw UDP video receiver callback...");
     if (tcpip_callback(UdpVideoInitCallback, NULL) != ERR_OK)
     {
@@ -682,6 +744,14 @@ int main(void)
     LOG_INFO("Initializing OpenMV frame buffer allocators...");
     omv_init();
     LOG_INFO("OpenMV frame buffer memory allocator initialized successfully.");
+
+#if defined(__EBI_LCD_PANEL__)
+    LOG_INFO("Initializing LCD panel...");
+    Display_Init();
+    LOG_INFO("LCD panel initialization returned. Drawing status screen...");
+    DrawStatusScreen(0, 0);
+    LOG_INFO("LCD status screen drawn.");
+#endif
 
     LOG_INFO("----------------------------------------------------------------");
     LOG_INFO("    Starting M55M1 UDP Server People Counting Firmware     ");
