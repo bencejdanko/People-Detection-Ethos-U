@@ -116,6 +116,15 @@ static void InitSPI(void)
 
 int Display_Init(void)
 {
+    /*
+     * Ordering dependency:
+     * The panel init sequence uses LCD_Delay_MilliSec/Display_Delay(), which
+     * waits on pmu_get_systick_Count(). In this FreeRTOS build that counter is
+     * maintained from FreeRTOS_TickHook(), so callers must not invoke
+     * Display_Init() from early main() before vTaskStartScheduler() has started
+     * ticking. Initialize the LCD from a task unless the delay implementation is
+     * changed to a pre-scheduler-safe timebase.
+     */
     pmu_reset_counters();
 
     //TODO: EBI bus init
@@ -175,6 +184,12 @@ void Display_Delay(uint32_t u32MilliSec)
 
     u64WaiteCycles += (SystemCoreClock / 1000) * u32MilliSec;
 
+    /*
+     * This loop only exits if pmu_get_systick_Count() advances. With FreeRTOS,
+     * that requires the scheduler tick hook to be running. If execution appears
+     * stuck here, first check whether Display_Init() was called before the
+     * scheduler started or after the tick hook was disabled.
+     */
     while (pmu_get_systick_Count() <= u64WaiteCycles)
     {
         __NOP();

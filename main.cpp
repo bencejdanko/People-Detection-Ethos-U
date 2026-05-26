@@ -150,6 +150,11 @@ static void DrawStatusScreen(uint64_t fps, size_t peopleCount)
     image_t statusImg;
     S_DISP_RECT statusRect;
 
+    // This no-feed/status-only path intentionally uses the same RGB565
+    // framebuffer and imlib text renderer as the live camera overlay below.
+    // Avoid switching this back to Display_PutText unless the LCD direct-text
+    // path is revalidated on this panel; it previously produced a black screen
+    // with no visible status text on startup.
     memset(frame_buf1, 0, LCD_FRAME_BUFFER_SIZE);
 
     statusImg.w = LCD_DISPLAY_WIDTH;
@@ -584,6 +589,15 @@ static void vNetworkInitTask(void *pvParameters)
     struct netif *netifResult;
 
 #if defined(__EBI_LCD_PANEL__)
+    // Display_Init() eventually calls Display_Delay(), which waits on the
+    // PMU/SysTick-derived counter updated from the FreeRTOS tick hook. Keep LCD
+    // initialization inside a task, after vTaskStartScheduler() has started.
+    // Calling Display_Init() from main() before task creation/scheduler start can
+    // hang forever in Display_Delay() because the counter may not advance yet.
+    //
+    // The first draw happens before network setup so the LCD is useful even when
+    // no UDP feed is present. The IP-specific redraw below must remain after lwIP
+    // assigns/configures g_netif.ip_addr.
     LOG_INFO("Initializing LCD panel...");
     Display_Init();
     LOG_INFO("LCD panel initialization returned. Drawing status screen...");
@@ -648,6 +662,10 @@ static void vNetworkInitTask(void *pvParameters)
     LOG_INFO("  Default gateway: %s", ip4addr_ntoa(&g_netif.gw));
 
 #if defined(__EBI_LCD_PANEL__)
+    // Redraw the status screen after the network address is known. This is the
+    // no-feed discovery path: users can read the device IP even before sending a
+    // UDP video stream. Keep this after DHCP/static netif configuration and before
+    // the NetInit task suspends.
     taskENTER_CRITICAL();
     ipaddr_ntoa_r(&g_netif.ip_addr, g_deviceIpAddress, sizeof(g_deviceIpAddress));
     taskEXIT_CRITICAL();
@@ -718,7 +736,10 @@ int main(void)
     SCB->SHCSR |= (SCB_SHCSR_MEMFAULTENA_Msk | SCB_SHCSR_BUSFAULTENA_Msk | SCB_SHCSR_USGFAULTENA_Msk);
     LOG_INFO("SCB fault handlers activated successfully.");
 
-    // Initialize OpenMV memory allocators
+    // Initialize OpenMV memory allocators before any status or camera rendering.
+    // LCD initialization is deliberately not done here: the LCD driver delay path
+    // depends on the FreeRTOS tick/PMU counter, so it must run from a task after
+    // vTaskStartScheduler() begins.
     LOG_INFO("Initializing OpenMV frame buffer allocators...");
     omv_init();
     LOG_INFO("OpenMV frame buffer memory allocator initialized successfully.");
