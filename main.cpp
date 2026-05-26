@@ -20,6 +20,7 @@
 extern "C" {
 #include "lwip/tcpip.h"
 #include "netif/ethernetif.h"
+#include "lwip/dhcp.h"
 #include "lwip/udp.h"
 #include "lwip/pbuf.h"
 #include "lwip/def.h"

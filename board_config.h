@@ -35,7 +35,7 @@
 #endif
 
 /* --- NETWORK CONFIGURATION --- */
-#define LWIP_DHCP_ENABLE           0   // Set 1 for DHCP, 0 for static IP configuration
+#define LWIP_DHCP_ENABLE           1   // Set 1 for DHCP, 0 for static IP configuration
 
 #if !LWIP_DHCP_ENABLE
     #define STATIC_IP_ADDR         "192.168.0.50"
