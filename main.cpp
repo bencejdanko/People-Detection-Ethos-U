@@ -107,7 +107,6 @@ static const int kStatusTextScale = 4;
 static const int kStatusTextMargin = 16;
 static const int kStatusTextLineHeight = FONT_HTIGHT * kStatusTextScale + 8;
 static const int kStatusTextColor = COLOR_R5_G6_B5_TO_RGB565(31, 63, 31);
-static const int kStatusBackgroundColor = COLOR_R5_G6_B5_TO_RGB565(0, 0, 0);
 
 static void CopyDeviceIpAddress(char *dst, size_t dstSize)
 {
@@ -128,18 +127,12 @@ static void CopyDeviceIpAddress(char *dst, size_t dstSize)
     }
 }
 
-static int StatusTextX(const char *text)
-{
-    const int textWidth = (int)strlen(text) * FONT_WIDTH * kStatusTextScale;
-    const int x = LCD_DISPLAY_WIDTH - kStatusTextMargin - textWidth;
-
-    return (x > kStatusTextMargin) ? x : kStatusTextMargin;
-}
-
 static void DrawStatusOverlay(image_t *img, uint64_t fps, size_t peopleCount)
 {
     char ipAddress[IPADDR_STRLEN_MAX];
     char lines[3][40];
+    const int statusX = kStatusTextMargin;
+    const int statusY = LCD_DISPLAY_HEIGHT - kStatusTextMargin - (kStatusTextLineHeight * 3);
 
     CopyDeviceIpAddress(ipAddress, sizeof(ipAddress));
 
@@ -147,36 +140,9 @@ static void DrawStatusOverlay(image_t *img, uint64_t fps, size_t peopleCount)
     sprintf(lines[1], "PEOPLE: %d", (int)peopleCount);
     sprintf(lines[2], "IP: %s", ipAddress);
 
-    int overlayWidth = 0;
-    for (size_t i = 0; i < 3; ++i)
-    {
-        const int lineWidth = (int)strlen(lines[i]) * FONT_WIDTH * kStatusTextScale;
-        if (lineWidth > overlayWidth)
-        {
-            overlayWidth = lineWidth;
-        }
-    }
-    overlayWidth += kStatusTextMargin;
-
-    int overlayX = LCD_DISPLAY_WIDTH - kStatusTextMargin - overlayWidth;
-    if (overlayX < kStatusTextMargin)
-    {
-        overlayX = kStatusTextMargin;
-        overlayWidth = LCD_DISPLAY_WIDTH - (kStatusTextMargin * 2);
-    }
-    const int overlayHeight = (kStatusTextLineHeight * 3) + kStatusTextMargin;
-    imlib_draw_rectangle(img,
-                         overlayX,
-                         kStatusTextMargin,
-                         overlayWidth,
-                         overlayHeight,
-                         kStatusBackgroundColor,
-                         1,
-                         true);
-
-    imlib_draw_string(img, StatusTextX(lines[0]), kStatusTextMargin, lines[0], kStatusTextColor, kStatusTextScale, 0, 0, false, false, false, false, 0, false, false);
-    imlib_draw_string(img, StatusTextX(lines[1]), kStatusTextMargin + kStatusTextLineHeight, lines[1], kStatusTextColor, kStatusTextScale, 0, 0, false, false, false, false, 0, false, false);
-    imlib_draw_string(img, StatusTextX(lines[2]), kStatusTextMargin + (kStatusTextLineHeight * 2), lines[2], kStatusTextColor, kStatusTextScale, 0, 0, false, false, false, false, 0, false, false);
+    imlib_draw_string(img, statusX, statusY, lines[0], kStatusTextColor, kStatusTextScale, 0, 0, false, false, false, false, 0, false, false);
+    imlib_draw_string(img, statusX, statusY + kStatusTextLineHeight, lines[1], kStatusTextColor, kStatusTextScale, 0, 0, false, false, false, false, 0, false, false);
+    imlib_draw_string(img, statusX, statusY + (kStatusTextLineHeight * 2), lines[2], kStatusTextColor, kStatusTextScale, 0, 0, false, false, false, false, 0, false, false);
 }
 
 static void DrawStatusScreen(uint64_t fps, size_t peopleCount)
