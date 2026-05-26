@@ -583,6 +583,14 @@ static void vNetworkInitTask(void *pvParameters)
     ip_addr_t ipaddr, netmask, gw;
     struct netif *netifResult;
 
+#if defined(__EBI_LCD_PANEL__)
+    LOG_INFO("Initializing LCD panel...");
+    Display_Init();
+    LOG_INFO("LCD panel initialization returned. Drawing status screen...");
+    DrawStatusScreen(0, 0);
+    LOG_INFO("LCD status screen drawn.");
+#endif
+
 #if LWIP_DHCP_ENABLE
     IP4_ADDR(&gw, 0, 0, 0, 0);
     IP4_ADDR(&ipaddr, 0, 0, 0, 0);
@@ -714,14 +722,6 @@ int main(void)
     LOG_INFO("Initializing OpenMV frame buffer allocators...");
     omv_init();
     LOG_INFO("OpenMV frame buffer memory allocator initialized successfully.");
-
-#if defined(__EBI_LCD_PANEL__)
-    LOG_INFO("Initializing LCD panel...");
-    Display_Init();
-    LOG_INFO("LCD panel initialization returned. Drawing status screen...");
-    DrawStatusScreen(0, 0);
-    LOG_INFO("LCD status screen drawn.");
-#endif
 
     LOG_INFO("----------------------------------------------------------------");
     LOG_INFO("    Starting M55M1 UDP Server People Counting Firmware     ");
