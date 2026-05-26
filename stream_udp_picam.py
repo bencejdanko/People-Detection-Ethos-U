@@ -46,7 +46,7 @@ class Picamera2Capture:
     def __init__(self, picam2):
         self.picam2 = picam2
         self.is_camera = True
-        self.color_order = "RGB"
+        self.color_order = "BGR"
 
     def read(self):
         return True, self.picam2.capture_array()
