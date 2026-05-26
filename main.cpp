@@ -181,20 +181,24 @@ static void DrawStatusOverlay(image_t *img, uint64_t fps, size_t peopleCount)
 
 static void DrawStatusScreen(uint64_t fps, size_t peopleCount)
 {
-    char ipAddress[IPADDR_STRLEN_MAX];
-    char line[40];
+    image_t statusImg;
+    S_DISP_RECT statusRect;
 
-    CopyDeviceIpAddress(ipAddress, sizeof(ipAddress));
-    Display_ClearLCD(C_BLACK);
+    memset(frame_buf1, 0, LCD_FRAME_BUFFER_SIZE);
 
-    sprintf(line, "FPS: %llu", fps);
-    Display_PutText(line, strlen(line), StatusTextX(line), kStatusTextMargin, C_WHITE, C_BLACK, false, kStatusTextScale);
+    statusImg.w = LCD_DISPLAY_WIDTH;
+    statusImg.h = LCD_DISPLAY_HEIGHT;
+    statusImg.size = LCD_FRAME_BUFFER_SIZE;
+    statusImg.pixfmt = PIXFORMAT_RGB565;
+    statusImg.data = (uint8_t *)frame_buf1;
 
-    sprintf(line, "PEOPLE: %d", (int)peopleCount);
-    Display_PutText(line, strlen(line), StatusTextX(line), kStatusTextMargin + kStatusTextLineHeight, C_WHITE, C_BLACK, false, kStatusTextScale);
+    DrawStatusOverlay(&statusImg, fps, peopleCount);
 
-    sprintf(line, "IP: %s", ipAddress);
-    Display_PutText(line, strlen(line), StatusTextX(line), kStatusTextMargin + (kStatusTextLineHeight * 2), C_WHITE, C_BLACK, false, kStatusTextScale);
+    statusRect.u32TopLeftX = 0;
+    statusRect.u32TopLeftY = 0;
+    statusRect.u32BottonRightX = LCD_DISPLAY_WIDTH - 1;
+    statusRect.u32BottonRightY = LCD_DISPLAY_HEIGHT - 1;
+    Display_FillRect((uint16_t *)statusImg.data, &statusRect, 1);
 }
 #endif
 
