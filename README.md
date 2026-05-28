@@ -2,8 +2,10 @@
 
 People counting solution for the NuMaker-X-M55M1D. Uses a UDP server to listen to camera feed over LAN, and an extremely efficient FOMO model to conduct people counting.
 
-* [Technical Report](https://docs.google.com/document/d/1819XO3czU8Z8Bpmk7attelKr136GNZ_pKRUPyuP5Vmg/edit?usp=sharing)
-* [Slide Deck](https://docs.google.com/presentation/d/1c7s3KPmj7XQssARVzuICO6-ltEVpFQYwPl5GAGwUMCI/edit?usp=sharing)
+## Resources
+
+* [Technical Report (Request Access)](https://docs.google.com/document/d/1819XO3czU8Z8Bpmk7attelKr136GNZ_pKRUPyuP5Vmg/edit?usp=sharing)
+* [Slide Deck (Request Access)](https://docs.google.com/presentation/d/1c7s3KPmj7XQssARVzuICO6-ltEVpFQYwPl5GAGwUMCI/edit?usp=sharing)
 * [NuMaker-X-M55M1D User Manual](https://www.nuvoton.com/export/resource-files/en-us--UM_NuMaker-X-M55M1D_EN_Rev1.01.pdf)
 * [Nuvoton NuMicro ICP Programming Tool](https://www.nuvoton.com/tool-and-software/debugger-and-programmer/1-to-1-debugger-and-programmer/nu-link2-pro/?index=4)
 
@@ -27,7 +29,7 @@ python3 stream_udp.py --port 5005 --source 0 --fps 15 --chunk-size 1450 --chunk-
 ### Run Streamer from Raspberry Pi
 
 ```
-# install cv2 globally
+# install necessary libraries
 sudo apt install python3-opencv
 sudo apt install python3-picamera2
 sudo apt install gstreamer1.0-libcamera gstreamer1.0-plugins-good
