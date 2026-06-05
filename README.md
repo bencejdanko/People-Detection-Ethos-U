@@ -7,21 +7,23 @@ People counting solution for the NuMaker-X-M55M1D. Uses a UDP server to listen t
 * [NuMaker-X-M55M1D User Manual](https://www.nuvoton.com/export/resource-files/en-us--UM_NuMaker-X-M55M1D_EN_Rev1.01.pdf)
 * [Nuvoton NuMicro ICP Programming Tool](https://www.nuvoton.com/tool-and-software/debugger-and-programmer/1-to-1-debugger-and-programmer/nu-link2-pro/?index=4)
 
-## Installation
+## Usage
 
 ### FOMO
 
+A FOMO model can be trained using an open source library we have created:
+
+* [fomo-edge-ai/fomo](https://github.com/fomo-edge-ai/fomo)
+
+We have prepared pre-trained models available at the [Hugging Face Model Hub](https://huggingface.co/fomo-edge-ai/fomo/fomo-edge-ai/fomo).
+
 1. Prepare Model Weights:
    Download the pre-trained FOMO model weights:
-   * [Download pre-trained weights](https://huggingface.co/bdanko/fomo-overhead-people-counting/resolve/main/model_192x192_ethos_u55_int8_vela.tflite?download=true)
+   * [Download pre-trained weights](https://huggingface.co/fomo-edge-ai/fomo/resolve/main/sjsu_headcount_m_int8_vela.tflite?download=true)
    
    Place the downloaded `.tflite` file at the root of this repository and rename it to `model.tflite`.
 
 2. Run `python3 tflite_to_c.py` to serialize the model before uploading it to the firmware.
-
-### YOLOX Nano
-
-1. Prepare Model Weights:
 
 ### Running the Streamer
 
