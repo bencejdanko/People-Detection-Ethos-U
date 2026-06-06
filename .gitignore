@@ -1,3 +1,4 @@
 model.tflite
 embedded_model.h
 sjsu_headcount_m_int8_vela.tflite
+sjsu_people_counting_model

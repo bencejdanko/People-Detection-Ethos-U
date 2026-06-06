@@ -32,7 +32,16 @@ We have prepared pre-trained models available at the [Hugging Face Model Hub](ht
 
 Stream a live feed from the default webcam (`0`):
 ```bash
-python3 stream_udp.py --port 5005 --source 0 --fps 15 --chunk-size 1450 --chunk-delay 0.0005
+python3 stream_udp.py --ip 192.168.0.30 --port 5005 --source 0 --fps 15 --chunk-size 1450 --chunk-delay 0.0005
+```
+
+Stream a recorded MP4 file from your local machine:
+
+```bash
+# You can clone some sample videos
+# git clone https://huggingface.co/datasets/bdanko/sjsu-people-counting
+
+python3 stream_udp_file.py --ip 192.168.0.30 --port 5005  --video-file "sjsu-people-counting\raw_mp4\FIXED_feed_20260530_013111_0003.mp4" --fps 30 --channels 3 --chunk-size 1450 --chunk-delay 0 --no-display
 ```
 
 ### Run Streamer from Raspberry Pi
