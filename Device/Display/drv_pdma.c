@@ -13,7 +13,7 @@
 #include "nu_bitutil.h"
 #include "drv_pdma.h"
 
-//#define OS_FREERTOS
+#define OS_FREERTOS
 
 #if defined(OS_FREERTOS)
     #include "FreeRTOS.h"

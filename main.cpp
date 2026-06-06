@@ -114,6 +114,23 @@ static char *g_lcdShowBuf = frame_buf2;
 static volatile bool g_lcdBlitPending = false;
 static TaskHandle_t xDisplayTaskHandle = NULL;
 
+#if USE_CCAP_CAMERA
+    #if DISPLAY_UPSCALE_TO_FULLSCREEN
+        #define RENDER_WIDTH   LCD_DISPLAY_WIDTH
+        #define RENDER_HEIGHT  LCD_DISPLAY_HEIGHT
+    #else
+        #define RENDER_WIDTH   CCAP_CAPTURE_WIDTH
+        #define RENDER_HEIGHT  CCAP_CAPTURE_HEIGHT
+    #endif
+#else
+    #define RENDER_WIDTH   LCD_DISPLAY_WIDTH
+    #define RENDER_HEIGHT  LCD_DISPLAY_HEIGHT
+#endif
+#define RENDER_FB_SIZE (RENDER_WIDTH * RENDER_HEIGHT * 2)
+
+static int8_t g_quantLUT[256];
+static volatile uint32_t g_displayBlitCycles = 0;
+
 char *_fb_base = NULL;
 char *_fb_end = NULL;
 char *_jpeg_buf = NULL;
@@ -418,8 +435,8 @@ static void vDisplayTask(void *pvParameters)
     S_DISP_RECT sDispRect = {
         .u32TopLeftX = 0,
         .u32TopLeftY = 0,
-        .u32BottonRightX = LCD_DISPLAY_WIDTH - 1,
-        .u32BottonRightY = LCD_DISPLAY_HEIGHT - 1
+        .u32BottonRightX = RENDER_WIDTH - 1,
+        .u32BottonRightY = RENDER_HEIGHT - 1
     };
 
     while (1)
@@ -427,8 +444,11 @@ static void vDisplayTask(void *pvParameters)
         /* Wait for notification from the inference task */
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
+        uint64_t t_start = pmu_get_systick_Count();
         /* Blit the ready show buffer to EBI screen (blocking PDMA/EBI write) */
         Display_FillRect((uint16_t *)g_lcdShowBuf, &sDispRect, 1);
+        uint64_t t_end = pmu_get_systick_Count();
+        g_displayBlitCycles = (uint32_t)(t_end - t_start);
 
         /* Clear the pending flag so the next swap can occur */
         g_lcdBlitPending = false;
@@ -493,6 +513,16 @@ static void vInferenceTask(void *pvParameters)
     arm::app::QuantParams inQuantParams = arm::app::GetTensorQuantParams(inputTensor);
     arm::app::QuantParams outQuantParams = arm::app::GetTensorQuantParams(outputTensor);
 
+    // Initialize the fast quantization lookup table using the exact model quantization parameters
+    for (int val = 0; val < 256; ++val)
+    {
+        float normalized = static_cast<float>(val) / 255.0f;
+        int32_t quantized = static_cast<int32_t>(roundf(normalized / inQuantParams.scale)) + inQuantParams.offset;
+        if (quantized < -128) quantized = -128;
+        if (quantized > 127)  quantized = 127;
+        g_quantLUT[val] = static_cast<int8_t>(quantized);
+    }
+
     arm::app::model::Detection detections[MODEL_MAX_DETECTIONS] = {};
     size_t detectionCount = 0;
     
@@ -502,11 +532,11 @@ static void vInferenceTask(void *pvParameters)
         (inQuantParams.scale > 0.007f) &&
         (inQuantParams.scale < 0.0085f);
 
-    // OpenMV image struct for overlays/text on the full LCD display buffer.
+    // OpenMV image struct for overlays/text on the LCD display buffer.
     image_t dstImg;
-    dstImg.w = LCD_DISPLAY_WIDTH;
-    dstImg.h = LCD_DISPLAY_HEIGHT;
-    dstImg.size = LCD_FRAME_BUFFER_SIZE;
+    dstImg.w = RENDER_WIDTH;
+    dstImg.h = RENDER_HEIGHT;
+    dstImg.size = RENDER_FB_SIZE;
     dstImg.pixfmt = PIXFORMAT_RGB565;
     dstImg.data = (uint8_t *)g_lcdDrawBuf;
 
@@ -517,6 +547,13 @@ static void vInferenceTask(void *pvParameters)
     uint64_t frameCount = 0;
     uint64_t lastTime = pmu_get_systick_Count();
     uint64_t currentFPS = 0;
+
+    // Profiling timing accumulators
+    uint64_t sumCaptureWait = 0;
+    uint64_t sumInputProc = 0;
+    uint64_t sumInference = 0;
+    uint64_t sumPostProcess = 0;
+    uint64_t sumRenderPrep = 0;
 
     LOG_INFO("Inference Engine initialized. Stack high water mark: %u words remaining.", (unsigned int)uxTaskGetStackHighWaterMark(NULL));
 
@@ -585,8 +622,12 @@ static void vInferenceTask(void *pvParameters)
 
     while (1)
     {
+#if USE_CCAP_CAMERA
         /* --- Step A: wait for CCAP DMA into captureBuf to finish --- */
+        uint64_t t_start_wait = pmu_get_systick_Count();
         ImageSensor_WaitCaptureDone();
+        uint64_t t_end_wait = pmu_get_systick_Count();
+        sumCaptureWait += (t_end_wait - t_start_wait);
 
         /* --- Step B: swap buffers --- */
         uint8_t *tmp = readyBuf;
@@ -599,29 +640,27 @@ static void vInferenceTask(void *pvParameters)
 
         /* --- Step D: resize + convert readyBuf (RGB565 QVGA) directly into
          *             the tensor input buffer (RGB888 192x192).              --- */
+        uint64_t t_start_inproc = pmu_get_systick_Count();
         ccapSrcImg.data = readyBuf;
         imlib_nvt_scale(&ccapSrcImg, &tensorInputImg, &captureRoi);
 
-        /* --- Step E: fast in-place quantization (uint8 -> int8) ---
-         * imlib_nvt_scale writes unsigned RGB888. The model uses
-         * zero_point=4, scale≈0.00736 which matches a simple x-128 shift
-         * (same trick as the YOLO sample: signed_req_data[i] = req_data[i] - 128). */
+        /* --- Step E: LUT fast in-place quantization (uint8 -> int8) --- */
         {
             uint8_t  *u8  = (uint8_t  *)inputTensor->data.data;
             int8_t   *s8  = (int8_t   *)inputTensor->data.data;
             for (int i = 0; i < FRAME_BUFFER_SIZE; ++i)
             {
-                s8[i] = static_cast<int8_t>(static_cast<int32_t>(u8[i]) - 128);
+                s8[i] = g_quantLUT[u8[i]];
             }
         }
+        uint64_t t_end_inproc = pmu_get_systick_Count();
+        sumInputProc += (t_end_inproc - t_start_inproc);
 
         /* inferenceFrame pointer used by the LCD display path below */
         const uint8_t *inferenceFrame = readyBuf;  // RGB565 QVGA
 #else
-    LOG_INFO("Waiting for incoming network video feed...");
+        LOG_INFO("Waiting for incoming network video feed...");
 
-    while (1)
-    {
         // Wait for the raw UDP callback to publish a complete frame.
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
         taskENTER_CRITICAL();
@@ -643,6 +682,7 @@ static void vInferenceTask(void *pvParameters)
 
 #if !USE_CCAP_CAMERA
         // 1. Quantize the raw RGB pixels into the model input tensor (int8)
+        uint64_t t_start_inproc = pmu_get_systick_Count();
         int8_t *signedInputData = inputTensor->data.int8;
 
         if (useFastInputQuant)
@@ -656,22 +696,21 @@ static void vInferenceTask(void *pvParameters)
         {
             for (int i = 0; i < FRAME_BUFFER_SIZE; ++i)
             {
-                float pixelFloat = static_cast<float>(inferenceFrame[i]);
-                float normalized = (inQuantParams.scale < 0.05f) ? (pixelFloat / 255.0f) : pixelFloat;
-                int32_t quantized = static_cast<int32_t>(roundf(normalized / inQuantParams.scale)) + inQuantParams.offset;
-
-                if (quantized < -128) quantized = -128;
-                if (quantized > 127)  quantized = 127;
-
-                signedInputData[i] = static_cast<int8_t>(quantized);
+                signedInputData[i] = g_quantLUT[inferenceFrame[i]];
             }
         }
+        uint64_t t_end_inproc = pmu_get_systick_Count();
+        sumInputProc += (t_end_inproc - t_start_inproc);
 #endif /* !USE_CCAP_CAMERA */
 
         // 2. Execute Ethos-U Accelerated Inference
+        uint64_t t_start_inf = pmu_get_systick_Count();
         model.RunInference();
+        uint64_t t_end_inf = pmu_get_systick_Count();
+        sumInference += (t_end_inf - t_start_inf);
 
         // 3. Post-Process Grid heatmaps to get target peaks (person locations)
+        uint64_t t_start_post = pmu_get_systick_Count();
         const int8_t *outputData = outputTensor->data.int8;
         postProcessor.Process(
             outputData,
@@ -683,23 +722,43 @@ static void vInferenceTask(void *pvParameters)
             MODEL_MAX_DETECTIONS,
             detectionCount
         );
+        uint64_t t_end_post = pmu_get_systick_Count();
+        sumPostProcess += (t_end_post - t_start_post);
 
         // 4. Update Metrics (FPS and Person Counts)
         frameCount++;
         uint64_t now = pmu_get_systick_Count();
-        if (now - lastTime >= SystemCoreClock) // 1 second interval
+        if (now - lastTime >= SystemCoreClock * 5) // 5 second interval
         {
-            currentFPS = frameCount;
+            currentFPS = frameCount / 5;
+            uint64_t divisor = frameCount > 0 ? frameCount : 1;
             frameCount = 0;
-            lastTime = now;
             
-            LOG_INFO("[STATUS] Real-time inference rate: %llu FPS | Active People: %d", currentFPS, (int)detectionCount);
+            float to_ms = 1000.0f / SystemCoreClock;
+            
+            LOG_INFO("[STATUS] FPS: %llu | People: %d", currentFPS, (int)detectionCount);
+            LOG_INFO("[PROFILE] Avg times per frame:");
+            LOG_INFO("  - Camera Wait:   %6.2f ms", (static_cast<float>(sumCaptureWait) / divisor) * to_ms);
+            LOG_INFO("  - Input Scale/Q: %6.2f ms", (static_cast<float>(sumInputProc) / divisor) * to_ms);
+            LOG_INFO("  - Inference:     %6.2f ms", (static_cast<float>(sumInference) / divisor) * to_ms);
+            LOG_INFO("  - Post-Process:  %6.2f ms", (static_cast<float>(sumPostProcess) / divisor) * to_ms);
+            LOG_INFO("  - Render Prep:   %6.2f ms", (static_cast<float>(sumRenderPrep) / divisor) * to_ms);
+            LOG_INFO("  - EBI Blit (HW): %6.2f ms", static_cast<float>(g_displayBlitCycles) * to_ms);
+            
+            sumCaptureWait = 0;
+            sumInputProc = 0;
+            sumInference = 0;
+            sumPostProcess = 0;
+            sumRenderPrep = 0;
+            lastTime = now;
         }
 
         // 5. Visual Rendering on LCD Panel (if enabled)
 #if defined(__EBI_LCD_PANEL__)
+        uint64_t t_start_render = pmu_get_systick_Count();
 #if USE_CCAP_CAMERA
-        // inferenceFrame is RGB565 QVGA — upscale directly to LCD framebuffer.
+        // Prep draw buffer: upscale or direct copy
+#if DISPLAY_UPSCALE_TO_FULLSCREEN
         {
             image_t lcdSrc;
             lcdSrc.w      = CCAP_CAPTURE_WIDTH;
@@ -710,6 +769,10 @@ static void vInferenceTask(void *pvParameters)
             rectangle_t lcdRoi = { 0, 0, CCAP_CAPTURE_WIDTH, CCAP_CAPTURE_HEIGHT };
             imlib_nvt_scale(&lcdSrc, &dstImg, &lcdRoi);
         }
+#else
+        // Direct copy of the QVGA RGB565 frame
+        memcpy(dstImg.data, inferenceFrame, CCAP_FB_SIZE);
+#endif
 #else
         // inferenceFrame is RGB888 192×192 — scale and convert to RGB565.
         ConvertRgb888ToRgb565Scaled(inferenceFrame,
@@ -722,10 +785,10 @@ static void vInferenceTask(void *pvParameters)
         for (size_t i = 0; i < detectionCount; ++i)
         {
             const arm::app::model::Detection& det = detections[i];
-            int x_disp = static_cast<int>((det.x * LCD_DISPLAY_WIDTH) / IMAGE_WIDTH);
-            int y_disp = static_cast<int>((det.y * LCD_DISPLAY_HEIGHT) / IMAGE_HEIGHT);
-            int box_w = LCD_DISPLAY_WIDTH / 24;
-            int box_h = LCD_DISPLAY_HEIGHT / 24;
+            int x_disp = static_cast<int>((det.x * RENDER_WIDTH) / IMAGE_WIDTH);
+            int y_disp = static_cast<int>((det.y * RENDER_HEIGHT) / IMAGE_HEIGHT);
+            int box_w = RENDER_WIDTH / 24;
+            int box_h = RENDER_HEIGHT / 24;
             if (box_w < 8) box_w = 8;
             if (box_h < 8) box_h = 8;
 
@@ -744,6 +807,8 @@ static void vInferenceTask(void *pvParameters)
         }
 
         DrawStatusOverlay(&dstImg, currentFPS, detectionCount);
+        uint64_t t_end_render = pmu_get_systick_Count();
+        sumRenderPrep += (t_end_render - t_start_render);
 
         // Blit to screen using the background display task (double-buffered)
         if (!g_lcdBlitPending)

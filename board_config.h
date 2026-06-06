@@ -65,6 +65,15 @@
 #define IMAGE_CHANNELS             3            // RGB (for full RGB implementation)
 #define FRAME_BUFFER_SIZE          (IMAGE_WIDTH * IMAGE_HEIGHT * IMAGE_CHANNELS)
 
+/* --- LCD DISPLAY PERFORMANCE CONFIGURATION ---
+ * Set DISPLAY_UPSCALE_TO_FULLSCREEN to 0 to draw the camera feed in its native 320x240
+ * QVGA resolution (same layout as the YOLOv8n sample). This removes software upscaling
+ * overhead and reduces the EBI bus payload by 5x (from 768 KB to 150 KB), resolving frame rate stalls.
+ *
+ * Set DISPLAY_UPSCALE_TO_FULLSCREEN to 1 to upscale the feed to full screen (800x480).
+ */
+#define DISPLAY_UPSCALE_TO_FULLSCREEN  0
+
 /* LCD preview size */
 #if defined(LT7381_LCD_PANEL)
     #define LCD_DISPLAY_WIDTH      800
