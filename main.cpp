@@ -477,6 +477,42 @@ static void vDisplayTask(void *pvParameters)
         g_lcdBlitPending = false;
     }
 }
+#endif // __EBI_LCD_PANEL__
+
+#if USE_CCAP_CAMERA
+static void ScaleAndQuantizeCcap(const uint16_t *src, int8_t *dst, const int8_t *lut)
+{
+    for (int y = 0; y < 192; ++y) {
+        int src_y = (y * 5) >> 2;
+        const uint16_t *srcRow = src + src_y * CCAP_CAPTURE_WIDTH;
+        int8_t *dstRow = dst + y * 192 * 3;
+        
+        int src_idx = 0;
+        for (int k = 0; k < 64; ++k) { // 192 / 3 = 64
+            uint16_t p0 = srcRow[src_idx + 0];
+            uint16_t p1 = srcRow[src_idx + 1];
+            uint16_t p2 = srcRow[src_idx + 3];
+            
+            // Pixel 0 (dst x = 3*k + 0)
+            dstRow[0] = lut[((p0 >> 11) & 0x1F) << 3];
+            dstRow[1] = lut[((p0 >> 5) & 0x3F) << 2];
+            dstRow[2] = lut[(p0 & 0x1F) << 3];
+            
+            // Pixel 1 (dst x = 3*k + 1)
+            dstRow[3] = lut[((p1 >> 11) & 0x1F) << 3];
+            dstRow[4] = lut[((p1 >> 5) & 0x3F) << 2];
+            dstRow[5] = lut[(p1 & 0x1F) << 3];
+            
+            // Pixel 2 (dst x = 3*k + 2)
+            dstRow[6] = lut[((p2 >> 11) & 0x1F) << 3];
+            dstRow[7] = lut[((p2 >> 5) & 0x3F) << 2];
+            dstRow[8] = lut[(p2 & 0x1F) << 3];
+            
+            dstRow += 9;
+            src_idx += 5;
+        }
+    }
+}
 #endif
 
 /* --- ML Inference and Post-Processing Task --- */
@@ -629,19 +665,7 @@ static void vInferenceTask(void *pvParameters)
     ccapSrcImg.size   = CCAP_FB_SIZE;
     ccapSrcImg.pixfmt = PIXFORMAT_RGB565;
 
-    /* imlib destination: resize directly into the tensor input buffer as RGB888 */
-    image_t tensorInputImg;
-    tensorInputImg.w      = IMAGE_WIDTH;
-    tensorInputImg.h      = IMAGE_HEIGHT;
-    tensorInputImg.size   = FRAME_BUFFER_SIZE;
-    tensorInputImg.pixfmt = PIXFORMAT_RGB888;
-    tensorInputImg.data   = (uint8_t *)inputTensor->data.data;
-
-    rectangle_t captureRoi;
-    captureRoi.x = 0;
-    captureRoi.y = 0;
-    captureRoi.w = CCAP_CAPTURE_WIDTH;
-    captureRoi.h = CCAP_CAPTURE_HEIGHT;
+    // Input scaling and quantization variables are local or static
 
     while (1)
     {
@@ -660,21 +684,11 @@ static void vInferenceTask(void *pvParameters)
          *             so CCAP DMA and NPU inference run concurrently.        --- */
         ImageSensor_TriggerCapture((uint32_t)captureBuf);
 
-        /* --- Step D: resize + convert readyBuf (RGB565 QVGA) directly into
-         *             the tensor input buffer (RGB888 192x192).              --- */
+        /* --- Step D: resize and quantize readyBuf (RGB565 QVGA) directly into
+         *             the tensor input buffer (int8 192x192 RGB888).         --- */
         uint64_t t_start_inproc = pmu_get_systick_Count();
         ccapSrcImg.data = readyBuf;
-        imlib_nvt_scale(&ccapSrcImg, &tensorInputImg, &captureRoi);
-
-        /* --- Step E: LUT fast in-place quantization (uint8 -> int8) --- */
-        {
-            uint8_t  *u8  = (uint8_t  *)inputTensor->data.data;
-            int8_t   *s8  = (int8_t   *)inputTensor->data.data;
-            for (int i = 0; i < FRAME_BUFFER_SIZE; ++i)
-            {
-                s8[i] = g_quantLUT[u8[i]];
-            }
-        }
+        ScaleAndQuantizeCcap((const uint16_t *)readyBuf, inputTensor->data.int8, g_quantLUT);
         uint64_t t_end_inproc = pmu_get_systick_Count();
         sumInputProc += (t_end_inproc - t_start_inproc);
 
