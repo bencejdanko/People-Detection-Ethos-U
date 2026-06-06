@@ -80,9 +80,14 @@ static volatile int32_t g_rxFrameBufferIndex = 0;
 static volatile int32_t g_publishedFrameBufferIndex = -1;
 static volatile int32_t g_processingFrameBufferIndex = -1;
 #else
-/* --- CCAP FRAME BUFFER MEMORY ALLOCATION --- */
-/* Single capture buffer in HyperRAM; CCAP DMA writes directly here. */
-__attribute__((section(".bss.hyperram.data"), aligned(32))) static uint8_t g_ccapFrameBuffer[FRAME_BUFFER_SIZE];
+/* --- CCAP FRAME BUFFER MEMORY ALLOCATION ---
+ * Two QVGA (320x240) RGB565 ping-pong buffers so that CCAP DMA into one
+ * buffer can overlap with NPU inference on the other. */
+#define CCAP_CAPTURE_WIDTH   320
+#define CCAP_CAPTURE_HEIGHT  240
+#define CCAP_FB_SIZE         (CCAP_CAPTURE_WIDTH * CCAP_CAPTURE_HEIGHT * 2)  // RGB565
+__attribute__((section(".bss.vram.data"), aligned(32))) static uint8_t g_ccapBuf0[CCAP_FB_SIZE];
+__attribute__((section(".bss.vram.data"), aligned(32))) static uint8_t g_ccapBuf1[CCAP_FB_SIZE];
 #endif /* !USE_CCAP_CAMERA */
 
 /* Tensor arena buffer for TensorFlow Lite Micro placed in SRAM01_HYPERRAM */
@@ -102,6 +107,12 @@ __attribute__((section(".bss.NoInit.activation_buf_sram"), aligned(32))) static 
 __attribute__((section(".bss.vram.data"), aligned(32))) static char fb_array[OMV_FB_SIZE + OMV_FB_ALLOC_SIZE];
 __attribute__((section(".bss.vram.data"), aligned(32))) static char jpeg_array[OMV_JPEG_BUF_SIZE];
 __attribute__((section(".bss.hyperram.data"), aligned(32))) static char frame_buf1[LCD_FRAME_BUFFER_SIZE];
+__attribute__((section(".bss.hyperram.data"), aligned(32))) static char frame_buf2[LCD_FRAME_BUFFER_SIZE];
+
+static char *g_lcdDrawBuf = frame_buf1;
+static char *g_lcdShowBuf = frame_buf2;
+static volatile bool g_lcdBlitPending = false;
+static TaskHandle_t xDisplayTaskHandle = NULL;
 
 char *_fb_base = NULL;
 char *_fb_end = NULL;
@@ -399,6 +410,32 @@ static int32_t LoadModelFromEmbeddedFlash(const unsigned char **modelData)
     return (int32_t)g_model_tflite_len;
 }
 
+/* --- LCD Display Task (EBI Blitting) --- */
+#if defined(__EBI_LCD_PANEL__)
+static void vDisplayTask(void *pvParameters)
+{
+    (void)pvParameters;
+    S_DISP_RECT sDispRect = {
+        .u32TopLeftX = 0,
+        .u32TopLeftY = 0,
+        .u32BottonRightX = LCD_DISPLAY_WIDTH - 1,
+        .u32BottonRightY = LCD_DISPLAY_HEIGHT - 1
+    };
+
+    while (1)
+    {
+        /* Wait for notification from the inference task */
+        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
+        /* Blit the ready show buffer to EBI screen (blocking PDMA/EBI write) */
+        Display_FillRect((uint16_t *)g_lcdShowBuf, &sDispRect, 1);
+
+        /* Clear the pending flag so the next swap can occur */
+        g_lcdBlitPending = false;
+    }
+}
+#endif
+
 /* --- ML Inference and Post-Processing Task --- */
 static void vInferenceTask(void *pvParameters)
 {
@@ -471,7 +508,7 @@ static void vInferenceTask(void *pvParameters)
     dstImg.h = LCD_DISPLAY_HEIGHT;
     dstImg.size = LCD_FRAME_BUFFER_SIZE;
     dstImg.pixfmt = PIXFORMAT_RGB565;
-    dstImg.data = (uint8_t *)frame_buf1;
+    dstImg.data = (uint8_t *)g_lcdDrawBuf;
 
 #if defined(__EBI_LCD_PANEL__)
     S_DISP_RECT sDispRect;
@@ -493,13 +530,13 @@ static void vInferenceTask(void *pvParameters)
         return;
     }
 
-    if (ImageSensor_Config(eIMAGE_FMT_RGB888_U8, IMAGE_WIDTH, IMAGE_HEIGHT, true) != 0)
+    if (ImageSensor_Config(eIMAGE_FMT_RGB565, CCAP_CAPTURE_WIDTH, CCAP_CAPTURE_HEIGHT, true) != 0)
     {
         LOG_ERROR("ImageSensor_Config failed.");
         vTaskDelete(NULL);
         return;
     }
-    LOG_INFO("CCAP camera ready. Capturing %ux%u RGB888 frames.", IMAGE_WIDTH, IMAGE_HEIGHT);
+    LOG_INFO("CCAP camera ready. Capturing %ux%u RGB565 frames (pipeline mode).", CCAP_CAPTURE_WIDTH, CCAP_CAPTURE_HEIGHT);
 
 #if defined(__EBI_LCD_PANEL__)
     /* In CCAP mode the network task is absent, so we initialise the LCD
@@ -511,13 +548,75 @@ static void vInferenceTask(void *pvParameters)
     LOG_INFO("LCD panel ready.");
 #endif
 
+    /* --- Two-buffer pipeline ---
+     * While the NPU runs inference on the "ready" buffer, CCAP DMA fills the
+     * "capture" buffer.  After inference we swap roles and immediately kick
+     * the next capture so the sensor is never idle.
+     *
+     * captureBuf  — buffer currently being filled by CCAP DMA
+     * readyBuf    — buffer whose previous capture is complete; safe to read
+     */
+    uint8_t *captureBuf = g_ccapBuf0;
+    uint8_t *readyBuf   = g_ccapBuf1;
+
+    /* Prime the pipeline: trigger the very first capture before entering loop */
+    ImageSensor_TriggerCapture((uint32_t)captureBuf);
+
+    /* imlib source image descriptor for the QVGA RGB565 capture buffer */
+    image_t ccapSrcImg;
+    ccapSrcImg.w      = CCAP_CAPTURE_WIDTH;
+    ccapSrcImg.h      = CCAP_CAPTURE_HEIGHT;
+    ccapSrcImg.size   = CCAP_FB_SIZE;
+    ccapSrcImg.pixfmt = PIXFORMAT_RGB565;
+
+    /* imlib destination: resize directly into the tensor input buffer as RGB888 */
+    image_t tensorInputImg;
+    tensorInputImg.w      = IMAGE_WIDTH;
+    tensorInputImg.h      = IMAGE_HEIGHT;
+    tensorInputImg.size   = FRAME_BUFFER_SIZE;
+    tensorInputImg.pixfmt = PIXFORMAT_RGB888;
+    tensorInputImg.data   = (uint8_t *)inputTensor->data.data;
+
+    rectangle_t captureRoi;
+    captureRoi.x = 0;
+    captureRoi.y = 0;
+    captureRoi.w = CCAP_CAPTURE_WIDTH;
+    captureRoi.h = CCAP_CAPTURE_HEIGHT;
+
     while (1)
     {
-        /* Trigger a single-shot CCAP capture into the dedicated frame buffer. */
-        ImageSensor_TriggerCapture((uint32_t)g_ccapFrameBuffer);
+        /* --- Step A: wait for CCAP DMA into captureBuf to finish --- */
         ImageSensor_WaitCaptureDone();
 
-        const uint8_t *inferenceFrame = g_ccapFrameBuffer;
+        /* --- Step B: swap buffers --- */
+        uint8_t *tmp = readyBuf;
+        readyBuf     = captureBuf;
+        captureBuf   = tmp;
+
+        /* --- Step C: immediately trigger next capture into the new captureBuf
+         *             so CCAP DMA and NPU inference run concurrently.        --- */
+        ImageSensor_TriggerCapture((uint32_t)captureBuf);
+
+        /* --- Step D: resize + convert readyBuf (RGB565 QVGA) directly into
+         *             the tensor input buffer (RGB888 192x192).              --- */
+        ccapSrcImg.data = readyBuf;
+        imlib_nvt_scale(&ccapSrcImg, &tensorInputImg, &captureRoi);
+
+        /* --- Step E: fast in-place quantization (uint8 -> int8) ---
+         * imlib_nvt_scale writes unsigned RGB888. The model uses
+         * zero_point=4, scale≈0.00736 which matches a simple x-128 shift
+         * (same trick as the YOLO sample: signed_req_data[i] = req_data[i] - 128). */
+        {
+            uint8_t  *u8  = (uint8_t  *)inputTensor->data.data;
+            int8_t   *s8  = (int8_t   *)inputTensor->data.data;
+            for (int i = 0; i < FRAME_BUFFER_SIZE; ++i)
+            {
+                s8[i] = static_cast<int8_t>(static_cast<int32_t>(u8[i]) - 128);
+            }
+        }
+
+        /* inferenceFrame pointer used by the LCD display path below */
+        const uint8_t *inferenceFrame = readyBuf;  // RGB565 QVGA
 #else
     LOG_INFO("Waiting for incoming network video feed...");
 
@@ -538,6 +637,11 @@ static void vInferenceTask(void *pvParameters)
         const uint8_t *inferenceFrame = g_udpFrameBuffers[frameBufferIndex];
 #endif /* USE_CCAP_CAMERA */
 
+#if defined(__EBI_LCD_PANEL__)
+        dstImg.data = (uint8_t *)g_lcdDrawBuf;
+#endif
+
+#if !USE_CCAP_CAMERA
         // 1. Quantize the raw RGB pixels into the model input tensor (int8)
         int8_t *signedInputData = inputTensor->data.int8;
 
@@ -562,6 +666,7 @@ static void vInferenceTask(void *pvParameters)
                 signedInputData[i] = static_cast<int8_t>(quantized);
             }
         }
+#endif /* !USE_CCAP_CAMERA */
 
         // 2. Execute Ethos-U Accelerated Inference
         model.RunInference();
@@ -593,11 +698,25 @@ static void vInferenceTask(void *pvParameters)
 
         // 5. Visual Rendering on LCD Panel (if enabled)
 #if defined(__EBI_LCD_PANEL__)
-        // Scale the raw RGB888 input frame to fill the LCD and convert to RGB565.
+#if USE_CCAP_CAMERA
+        // inferenceFrame is RGB565 QVGA — upscale directly to LCD framebuffer.
+        {
+            image_t lcdSrc;
+            lcdSrc.w      = CCAP_CAPTURE_WIDTH;
+            lcdSrc.h      = CCAP_CAPTURE_HEIGHT;
+            lcdSrc.size   = CCAP_FB_SIZE;
+            lcdSrc.pixfmt = PIXFORMAT_RGB565;
+            lcdSrc.data   = (uint8_t *)inferenceFrame;
+            rectangle_t lcdRoi = { 0, 0, CCAP_CAPTURE_WIDTH, CCAP_CAPTURE_HEIGHT };
+            imlib_nvt_scale(&lcdSrc, &dstImg, &lcdRoi);
+        }
+#else
+        // inferenceFrame is RGB888 192×192 — scale and convert to RGB565.
         ConvertRgb888ToRgb565Scaled(inferenceFrame,
                                     (uint16_t *)dstImg.data,
                                     LCD_DISPLAY_WIDTH,
                                     LCD_DISPLAY_HEIGHT);
+#endif /* USE_CCAP_CAMERA */
 
         // Draw crosshair indicators at each person peak
         for (size_t i = 0; i < detectionCount; ++i)
@@ -626,12 +745,22 @@ static void vInferenceTask(void *pvParameters)
 
         DrawStatusOverlay(&dstImg, currentFPS, detectionCount);
 
-        // Blit to screen
-        sDispRect.u32TopLeftX = 0;
-        sDispRect.u32TopLeftY = 0;
-        sDispRect.u32BottonRightX = LCD_DISPLAY_WIDTH - 1;
-        sDispRect.u32BottonRightY = LCD_DISPLAY_HEIGHT - 1;
-        Display_FillRect((uint16_t *)dstImg.data, &sDispRect, 1);
+        // Blit to screen using the background display task (double-buffered)
+        if (!g_lcdBlitPending)
+        {
+            g_lcdBlitPending = true;
+
+            // Swap draw buffer and show buffer
+            char *tmp = g_lcdShowBuf;
+            g_lcdShowBuf = g_lcdDrawBuf;
+            g_lcdDrawBuf = tmp;
+
+            // Notify display task to start background blit
+            if (xDisplayTaskHandle != NULL)
+            {
+                xTaskNotifyGive(xDisplayTaskHandle);
+            }
+        }
 #endif
 #if !USE_CCAP_CAMERA
         taskENTER_CRITICAL();
@@ -788,6 +917,15 @@ int main(void)
                          1),                // eXecute Never
             ARM_MPU_RLAR((((unsigned int)frame_buf1) + sizeof(frame_buf1) - 1),        // Limit
                          eMPU_ATTR_NON_CACHEABLE) // Non-Cacheable
+        },
+        {
+            ARM_MPU_RBAR(((unsigned int)frame_buf2),        // Base
+                         ARM_MPU_SH_NON,    // Non-shareable
+                         0,                 // Read-Only
+                         0,                 // Non-Privileged
+                         1),                // eXecute Never
+            ARM_MPU_RLAR((((unsigned int)frame_buf2) + sizeof(frame_buf2) - 1),        // Limit
+                         eMPU_ATTR_NON_CACHEABLE) // Non-Cacheable
         }
     };
 
@@ -829,6 +967,16 @@ int main(void)
         while (1);
     }
 #endif /* !USE_CCAP_CAMERA */
+
+#if defined(__EBI_LCD_PANEL__)
+    LOG_INFO("Spawning LCD Display FreeRTOS task (Stack: 1024 words, Priority: %lu)...", (unsigned long)(tskIDLE_PRIORITY + 3UL));
+    if (xTaskCreate(vDisplayTask, "Display", 1024, NULL, tskIDLE_PRIORITY + 3UL, &xDisplayTaskHandle) != pdPASS)
+    {
+        LOG_ERROR("Failed to create LCD Display task. FreeRTOS heap remaining: %u bytes.",
+                  (unsigned int)xPortGetFreeHeapSize());
+        while (1);
+    }
+#endif
 
     LOG_INFO("Spawning ML Inference FreeRTOS task (Stack: 4096 words, Priority: %lu)...", (unsigned long)(tskIDLE_PRIORITY + 2UL));
     if (xTaskCreate(vInferenceTask, "Inference", 4096, NULL, tskIDLE_PRIORITY + 2UL, &xInferenceTaskHandle) != pdPASS)
