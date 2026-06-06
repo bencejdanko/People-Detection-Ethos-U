@@ -8,7 +8,9 @@
 #ifndef __BOARD_CONFIG_H__
 #define __BOARD_CONFIG_H__
 
+#ifndef SCATTER_FILE
 #include "NuMicro.h"
+#endif
 
 /* Board Model Configuration */
 #define __NUMAKER_M55M1__

@@ -54,6 +54,9 @@
  *        memory banks.
  */
 
+#define SCATTER_FILE
+#include "board_config.h"
+
 #ifndef STACK_SIZE
 #define STACK_SIZE 0x3000
 #endif
@@ -147,11 +150,13 @@ APP_IMAGE FLASH_START FLASH_SIZE
     SRAM2 SRAM2_START SRAM2_SIZE
     {
         .ANY (.bss.vram.data)
+#if !USE_CCAP_CAMERA
         *memp.o (.bss.memp_memory_PBUF_POOL_base)
         *mem.o (.bss.ram_heap)
         *emac.o (.bss.memp_memory_emac_rx_base)
         *memp.o (.bss.memp_memory_TCP_PCB_base)
         *memp.o (.bss.memp_memory_TCP_SEG_base)
+#endif
     }
 
     SRAM_NONCACHEABLE SRAM01_ALIASE_START SRAM01_ALIASE_SIZE
