@@ -176,8 +176,10 @@ static void CopyDeviceIpAddress(char *dst, size_t dstSize)
 static void DrawStatusOverlay(image_t *img, uint64_t fps, size_t peopleCount)
 {
     char lines[3][40];
+    int textScale = (img->h >= 480) ? 4 : 2;
+    int lineSpacing = FONT_HTIGHT * textScale + 8;
     const int statusX = kStatusTextMargin;
-    const int statusY = LCD_DISPLAY_HEIGHT - kStatusTextMargin - (kStatusTextLineHeight * 3);
+    const int statusY = img->h - kStatusTextMargin - (lineSpacing * 3);
 
     sprintf(lines[0], "FPS: %llu", fps);
     sprintf(lines[1], "PEOPLE: %d", (int)peopleCount);
@@ -189,9 +191,9 @@ static void DrawStatusOverlay(image_t *img, uint64_t fps, size_t peopleCount)
     sprintf(lines[2], "IP: %s", ipAddress);
 #endif
 
-    imlib_draw_string(img, statusX, statusY, lines[0], kStatusTextColor, kStatusTextScale, 0, 0, false, false, false, false, 0, false, false);
-    imlib_draw_string(img, statusX, statusY + kStatusTextLineHeight, lines[1], kStatusTextColor, kStatusTextScale, 0, 0, false, false, false, false, 0, false, false);
-    imlib_draw_string(img, statusX, statusY + (kStatusTextLineHeight * 2), lines[2], kStatusTextColor, kStatusTextScale, 0, 0, false, false, false, false, 0, false, false);
+    imlib_draw_string(img, statusX, statusY, lines[0], kStatusTextColor, textScale, 0, 0, false, false, false, false, 0, false, false);
+    imlib_draw_string(img, statusX, statusY + lineSpacing, lines[1], kStatusTextColor, textScale, 0, 0, false, false, false, false, 0, false, false);
+    imlib_draw_string(img, statusX, statusY + (lineSpacing * 2), lines[2], kStatusTextColor, textScale, 0, 0, false, false, false, false, 0, false, false);
 }
 
 static void DrawStatusScreen(uint64_t fps, size_t peopleCount)
@@ -199,16 +201,12 @@ static void DrawStatusScreen(uint64_t fps, size_t peopleCount)
     image_t statusImg;
     S_DISP_RECT statusRect;
 
-    // This no-feed/status-only path intentionally uses the same RGB565
-    // framebuffer and imlib text renderer as the live camera overlay below.
-    // Avoid switching this back to Display_PutText unless the LCD direct-text
-    // path is revalidated on this panel; it previously produced a black screen
-    // with no visible status text on startup.
-    memset(frame_buf1, 0, LCD_FRAME_BUFFER_SIZE);
+    // Clear the active buffer region
+    memset(frame_buf1, 0, RENDER_FB_SIZE);
 
-    statusImg.w = LCD_DISPLAY_WIDTH;
-    statusImg.h = LCD_DISPLAY_HEIGHT;
-    statusImg.size = LCD_FRAME_BUFFER_SIZE;
+    statusImg.w = RENDER_WIDTH;
+    statusImg.h = RENDER_HEIGHT;
+    statusImg.size = RENDER_FB_SIZE;
     statusImg.pixfmt = PIXFORMAT_RGB565;
     statusImg.data = (uint8_t *)frame_buf1;
 
@@ -216,8 +214,13 @@ static void DrawStatusScreen(uint64_t fps, size_t peopleCount)
 
     statusRect.u32TopLeftX = 0;
     statusRect.u32TopLeftY = 0;
-    statusRect.u32BottonRightX = LCD_DISPLAY_WIDTH - 1;
-    statusRect.u32BottonRightY = LCD_DISPLAY_HEIGHT - 1;
+    statusRect.u32BottonRightX = RENDER_WIDTH - 1;
+    statusRect.u32BottonRightY = RENDER_HEIGHT - 1;
+
+    // Clear the physical LCD screen to black first
+    Display_ClearLCD(C_BLACK);
+
+    // Draw the active window region
     Display_FillRect((uint16_t *)statusImg.data, &statusRect, 1);
 }
 #endif
