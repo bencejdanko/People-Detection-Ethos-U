@@ -207,16 +207,27 @@ static void DrawStatusScreen(uint64_t fps, size_t peopleCount)
 
     DrawStatusOverlay(&statusImg, fps, peopleCount);
 
+#if USE_CCAP_CAMERA
+    statusRect.u32TopLeftX = (LCD_DISPLAY_WIDTH - CCAP_CAPTURE_WIDTH * 2) / 2;     // 80
+    statusRect.u32TopLeftY = (LCD_DISPLAY_HEIGHT - CCAP_CAPTURE_HEIGHT * 2) / 2;   // 0
+    statusRect.u32BottonRightX = (LCD_DISPLAY_WIDTH - CCAP_CAPTURE_WIDTH * 2) / 2 + CCAP_CAPTURE_WIDTH * 2 - 1; // 719
+    statusRect.u32BottonRightY = (LCD_DISPLAY_HEIGHT - CCAP_CAPTURE_HEIGHT * 2) / 2 + CCAP_CAPTURE_HEIGHT * 2 - 1; // 479
+#else
     statusRect.u32TopLeftX = 0;
     statusRect.u32TopLeftY = 0;
     statusRect.u32BottonRightX = RENDER_WIDTH - 1;
     statusRect.u32BottonRightY = RENDER_HEIGHT - 1;
+#endif
 
     // Clear the physical LCD screen to black first
     Display_ClearLCD(C_BLACK);
 
     // Draw the active window region
+#if USE_CCAP_CAMERA
+    Display_FillRect((uint16_t *)statusImg.data, &statusRect, 2);
+#else
     Display_FillRect((uint16_t *)statusImg.data, &statusRect, 1);
+#endif
 }
 #endif
 
