@@ -761,29 +761,49 @@ static void vInferenceTask(void *pvParameters)
 #if defined(__EBI_LCD_PANEL__)
         uint64_t t_start_render = pmu_get_systick_Count();
 #if USE_CCAP_CAMERA
-        // Prep draw buffer: upscale or direct copy
+        // 5a. Draw crosshair indicators directly on the fast QVGA SRAM image first
+        for (size_t i = 0; i < detectionCount; ++i)
+        {
+            const arm::app::model::Detection& det = detections[i];
+            int x_disp = static_cast<int>((det.x * CCAP_CAPTURE_WIDTH) / IMAGE_WIDTH);
+            int y_disp = static_cast<int>((det.y * CCAP_CAPTURE_HEIGHT) / IMAGE_HEIGHT);
+            int box_w = CCAP_CAPTURE_WIDTH / 24;
+            int box_h = CCAP_CAPTURE_HEIGHT / 24;
+            if (box_w < 8) box_w = 8;
+            if (box_h < 8) box_h = 8;
+
+            // Draw a bounding crosshair directly on CCAP source image (in fast SRAM2)
+            imlib_draw_rectangle(&ccapSrcImg,
+                                 x_disp - (box_w / 2),
+                                 y_disp - (box_h / 2),
+                                 box_w,
+                                 box_h,
+                                 COLOR_R5_G6_B5_TO_RGB565(31, 0, 0),
+                                 2,
+                                 false);
+            
+            // Draw center dot
+            imlib_draw_rectangle(&ccapSrcImg, x_disp - 1, y_disp - 1, 2, 2, COLOR_R5_G6_B5_TO_RGB565(31, 31, 0), 1, true);
+        }
+
+        DrawStatusOverlay(&ccapSrcImg, currentFPS, detectionCount);
+
+        // 5b. Prep draw buffer: upscale or direct copy of the SRAM image (with overlays) to HyperRAM
 #if DISPLAY_UPSCALE_TO_FULLSCREEN
         {
-            image_t lcdSrc;
-            lcdSrc.w      = CCAP_CAPTURE_WIDTH;
-            lcdSrc.h      = CCAP_CAPTURE_HEIGHT;
-            lcdSrc.size   = CCAP_FB_SIZE;
-            lcdSrc.pixfmt = PIXFORMAT_RGB565;
-            lcdSrc.data   = (uint8_t *)inferenceFrame;
             rectangle_t lcdRoi = { 0, 0, CCAP_CAPTURE_WIDTH, CCAP_CAPTURE_HEIGHT };
-            imlib_nvt_scale(&lcdSrc, &dstImg, &lcdRoi);
+            imlib_nvt_scale(&ccapSrcImg, &dstImg, &lcdRoi);
         }
 #else
-        // Direct copy of the QVGA RGB565 frame
+        // Direct copy of the QVGA RGB565 frame (with overlays)
         memcpy(dstImg.data, inferenceFrame, CCAP_FB_SIZE);
 #endif
 #else
-        // inferenceFrame is RGB888 192×192 — scale and convert to RGB565.
+        // UDP path: inferenceFrame is RGB888 192×192 — scale and convert to RGB565.
         ConvertRgb888ToRgb565Scaled(inferenceFrame,
                                     (uint16_t *)dstImg.data,
                                     LCD_DISPLAY_WIDTH,
                                     LCD_DISPLAY_HEIGHT);
-#endif /* USE_CCAP_CAMERA */
 
         // Draw crosshair indicators at each person peak
         for (size_t i = 0; i < detectionCount; ++i)
@@ -811,6 +831,7 @@ static void vInferenceTask(void *pvParameters)
         }
 
         DrawStatusOverlay(&dstImg, currentFPS, detectionCount);
+#endif /* USE_CCAP_CAMERA */
         uint64_t t_end_render = pmu_get_systick_Count();
         sumRenderPrep += (t_end_render - t_start_render);
 
@@ -976,7 +997,7 @@ int main(void)
                          0,                 // Non-Privileged
                          1),                // eXecute Never
             ARM_MPU_RLAR((((unsigned int)fb_array) + sizeof(fb_array) - 1),        // Limit
-                         eMPU_ATTR_NON_CACHEABLE) // Non-Cacheable
+                         eMPU_ATTR_CACHEABLE_WBWARA) // Cacheable Write-Back
         },
         {
             ARM_MPU_RBAR(((unsigned int)frame_buf1),        // Base
@@ -985,7 +1006,7 @@ int main(void)
                          0,                 // Non-Privileged
                          1),                // eXecute Never
             ARM_MPU_RLAR((((unsigned int)frame_buf1) + sizeof(frame_buf1) - 1),        // Limit
-                         eMPU_ATTR_NON_CACHEABLE) // Non-Cacheable
+                         eMPU_ATTR_CACHEABLE_WBWARA) // Cacheable Write-Back
         },
         {
             ARM_MPU_RBAR(((unsigned int)frame_buf2),        // Base
@@ -994,14 +1015,14 @@ int main(void)
                          0,                 // Non-Privileged
                          1),                // eXecute Never
             ARM_MPU_RLAR((((unsigned int)frame_buf2) + sizeof(frame_buf2) - 1),        // Limit
-                         eMPU_ATTR_NON_CACHEABLE) // Non-Cacheable
+                         eMPU_ATTR_CACHEABLE_WBWARA) // Cacheable Write-Back
         }
     };
 
     // Apply custom MPU regions
     LOG_INFO("Configuring custom MPU memory caching regions...");
     InitPreDefMPURegion(&mpuConfig[0], sizeof(mpuConfig) / sizeof(mpuConfig[0]));
-    LOG_INFO("Custom MPU memory cache regions applied successfully (tensorArena WTRA, framebuffers non-cacheable).");
+    LOG_INFO("Custom MPU memory cache regions applied successfully (tensorArena WTRA, framebuffers cacheable WBWARA).");
 
     // Enable MemManage, BusFault, and UsageFault handlers explicitly in SCB
     LOG_INFO("Enabling dedicated SCB fault handlers (MemManage, BusFault, UsageFault)...");
