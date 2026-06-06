@@ -100,6 +100,11 @@ static void SYS_Init(void)
     /* Enable NPU module clock */
     CLK_EnableModuleClock(NPU0_MODULE);
 
+#if USE_CCAP_CAMERA
+    /* Enable CCAP0 module clock */
+    CLK_EnableModuleClock(CCAP0_MODULE);
+#endif /* USE_CCAP_CAMERA */
+
     /* Enable SDH0 module clock source as HCLK0 and SDH0 module clock divider as 4 */
     CLK_EnableModuleClock(SDH0_MODULE);
     CLK_SetModuleClock(SDH0_MODULE, CLK_SDHSEL_SDH0SEL_HCLK0, CLK_SDHDIV_SDH0DIV(4));
