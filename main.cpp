@@ -16,7 +16,8 @@
 #include "task.h"
 #include "semphr.h"
 
-/* LwIP network includes */
+/* LwIP network includes (UDP server path only) */
+#if !USE_CCAP_CAMERA
 extern "C" {
 #include "lwip/tcpip.h"
 #include "netif/ethernetif.h"
@@ -26,6 +27,7 @@ extern "C" {
 #include "lwip/def.h"
 #include "emac.h"
 }
+#endif /* !USE_CCAP_CAMERA */
 
 /* Board and BSP includes */
 #include "NuMicro.h"
@@ -48,6 +50,13 @@ extern "C" {
 #include "imlib.h"
 #include "framebuffer.h"
 
+/* CCAP onboard camera (when USE_CCAP_CAMERA is enabled) */
+#if USE_CCAP_CAMERA
+extern "C" {
+#include "ImageSensor.h"
+}
+#endif /* USE_CCAP_CAMERA */
+
 /* Model and ML includes */
 #include "InferenceModel.hpp"
 #include "PostProcessor.hpp"
@@ -60,15 +69,21 @@ extern "C" {
 /* Task Handles */
 static TaskHandle_t xInferenceTaskHandle = NULL;
 
-/* Network interface structure */
+#if !USE_CCAP_CAMERA
+/* Network interface structure (UDP path only) */
 struct netif g_netif;
 static char g_deviceIpAddress[IPADDR_STRLEN_MAX] = "0.0.0.0";
 
-/* --- FRAME BUFFER MEMORY ALLOCATION --- */
+/* --- UDP FRAME BUFFER MEMORY ALLOCATION --- */
 __attribute__((section(".bss.hyperram.data"), aligned(32))) static uint8_t g_udpFrameBuffers[3][FRAME_BUFFER_SIZE];
 static volatile int32_t g_rxFrameBufferIndex = 0;
 static volatile int32_t g_publishedFrameBufferIndex = -1;
 static volatile int32_t g_processingFrameBufferIndex = -1;
+#else
+/* --- CCAP FRAME BUFFER MEMORY ALLOCATION --- */
+/* Single capture buffer in HyperRAM; CCAP DMA writes directly here. */
+__attribute__((section(".bss.hyperram.data"), aligned(32))) static uint8_t g_ccapFrameBuffer[FRAME_BUFFER_SIZE];
+#endif /* !USE_CCAP_CAMERA */
 
 /* Tensor arena buffer for TensorFlow Lite Micro placed in SRAM01_HYPERRAM */
 namespace arm {
@@ -109,6 +124,7 @@ static const int kStatusTextMargin = 16;
 static const int kStatusTextLineHeight = FONT_HTIGHT * kStatusTextScale + 8;
 static const int kStatusTextColor = COLOR_R5_G6_B5_TO_RGB565(31, 63, 31);
 
+#if !USE_CCAP_CAMERA
 static void CopyDeviceIpAddress(char *dst, size_t dstSize)
 {
     if (dstSize == 0)
@@ -127,19 +143,23 @@ static void CopyDeviceIpAddress(char *dst, size_t dstSize)
         taskEXIT_CRITICAL();
     }
 }
+#endif /* !USE_CCAP_CAMERA */
 
 static void DrawStatusOverlay(image_t *img, uint64_t fps, size_t peopleCount)
 {
-    char ipAddress[IPADDR_STRLEN_MAX];
     char lines[3][40];
     const int statusX = kStatusTextMargin;
     const int statusY = LCD_DISPLAY_HEIGHT - kStatusTextMargin - (kStatusTextLineHeight * 3);
 
-    CopyDeviceIpAddress(ipAddress, sizeof(ipAddress));
-
     sprintf(lines[0], "FPS: %llu", fps);
     sprintf(lines[1], "PEOPLE: %d", (int)peopleCount);
+#if USE_CCAP_CAMERA
+    sprintf(lines[2], "SRC: CCAP Camera");
+#else
+    char ipAddress[IPADDR_STRLEN_MAX];
+    CopyDeviceIpAddress(ipAddress, sizeof(ipAddress));
     sprintf(lines[2], "IP: %s", ipAddress);
+#endif
 
     imlib_draw_string(img, statusX, statusY, lines[0], kStatusTextColor, kStatusTextScale, 0, 0, false, false, false, false, 0, false, false);
     imlib_draw_string(img, statusX, statusY + kStatusTextLineHeight, lines[1], kStatusTextColor, kStatusTextScale, 0, 0, false, false, false, false, 0, false, false);
@@ -224,6 +244,7 @@ static void omv_init()
     framebuffer_init_from_image(&frameBuffer);
 }
 
+#if !USE_CCAP_CAMERA
 /* UDP Frame Protocol Structure */
 struct PacketHeader {
     uint32_t magic;         // Magic Header (0x46524D45 -> "FRME")
@@ -350,6 +371,7 @@ static void UdpVideoInitCallback(void *arg)
     udp_recv(s_udpVideoPcb, UdpVideoReceiveCallback, NULL);
     LOG_INFO("Raw UDP video receiver listening on port %d.", UDP_STREAM_PORT);
 }
+#endif /* !USE_CCAP_CAMERA */
 
 static bool EmbeddedModelContainsEthosUCustomOp(void)
 {
@@ -460,6 +482,43 @@ static void vInferenceTask(void *pvParameters)
     uint64_t currentFPS = 0;
 
     LOG_INFO("Inference Engine initialized. Stack high water mark: %u words remaining.", (unsigned int)uxTaskGetStackHighWaterMark(NULL));
+
+#if USE_CCAP_CAMERA
+    /* --- CCAP camera path: initialise sensor then capture in a tight loop --- */
+    LOG_INFO("Initializing CCAP onboard camera (HM1055)...");
+    if (ImageSensor_Init() != 0)
+    {
+        LOG_ERROR("ImageSensor_Init failed. Check CCAP wiring and sensor power.");
+        vTaskDelete(NULL);
+        return;
+    }
+
+    if (ImageSensor_Config(eIMAGE_FMT_RGB888_U8, IMAGE_WIDTH, IMAGE_HEIGHT, true) != 0)
+    {
+        LOG_ERROR("ImageSensor_Config failed.");
+        vTaskDelete(NULL);
+        return;
+    }
+    LOG_INFO("CCAP camera ready. Capturing %ux%u RGB888 frames.", IMAGE_WIDTH, IMAGE_HEIGHT);
+
+#if defined(__EBI_LCD_PANEL__)
+    /* In CCAP mode the network task is absent, so we initialise the LCD
+     * from here.  Display_Delay() relies on the FreeRTOS PMU tick counter
+     * which is now running because the scheduler has started. */
+    LOG_INFO("Initializing LCD panel (CCAP mode)...");
+    Display_Init();
+    DrawStatusScreen(0, 0);
+    LOG_INFO("LCD panel ready.");
+#endif
+
+    while (1)
+    {
+        /* Trigger a single-shot CCAP capture into the dedicated frame buffer. */
+        ImageSensor_TriggerCapture((uint32_t)g_ccapFrameBuffer);
+        ImageSensor_WaitCaptureDone();
+
+        const uint8_t *inferenceFrame = g_ccapFrameBuffer;
+#else
     LOG_INFO("Waiting for incoming network video feed...");
 
     while (1)
@@ -477,6 +536,7 @@ static void vInferenceTask(void *pvParameters)
         }
 
         const uint8_t *inferenceFrame = g_udpFrameBuffers[frameBufferIndex];
+#endif /* USE_CCAP_CAMERA */
 
         // 1. Quantize the raw RGB pixels into the model input tensor (int8)
         int8_t *signedInputData = inputTensor->data.int8;
@@ -573,16 +633,19 @@ static void vInferenceTask(void *pvParameters)
         sDispRect.u32BottonRightY = LCD_DISPLAY_HEIGHT - 1;
         Display_FillRect((uint16_t *)dstImg.data, &sDispRect, 1);
 #endif
+#if !USE_CCAP_CAMERA
         taskENTER_CRITICAL();
         if (g_processingFrameBufferIndex == frameBufferIndex)
         {
             g_processingFrameBufferIndex = -1;
         }
         taskEXIT_CRITICAL();
+#endif /* !USE_CCAP_CAMERA */
     }
 }
 
-/* LwIP TCP/IP stack thread task */
+#if !USE_CCAP_CAMERA
+/* LwIP TCP/IP stack thread task (UDP server path only) */
 static void vNetworkInitTask(void *pvParameters)
 {
     (void)pvParameters;
@@ -686,6 +749,7 @@ static void vNetworkInitTask(void *pvParameters)
     LOG_INFO("Suspending NetInit task.");
     vTaskSuspend(NULL);
 }
+#endif /* !USE_CCAP_CAMERA */
 
 int main(void)
 {
@@ -745,11 +809,18 @@ int main(void)
     omv_init();
     LOG_INFO("OpenMV frame buffer memory allocator initialized successfully.");
 
+#if USE_CCAP_CAMERA
+    LOG_INFO("----------------------------------------------------------------");
+    LOG_INFO("    Starting M55M1 CCAP Camera People Counting Firmware    ");
+    LOG_INFO("----------------------------------------------------------------");
+#else
     LOG_INFO("----------------------------------------------------------------");
     LOG_INFO("    Starting M55M1 UDP Server People Counting Firmware     ");
     LOG_INFO("----------------------------------------------------------------");
+#endif
 
-    // Create system coordinator tasks
+#if !USE_CCAP_CAMERA
+    // Create NetworkInit task only in UDP server mode
     LOG_INFO("Spawning NetworkInit FreeRTOS task (Stack: 2048 words, Priority: %lu)...", (unsigned long)(tskIDLE_PRIORITY + 4UL));
     if (xTaskCreate(vNetworkInitTask, "NetInit", 2048, NULL, tskIDLE_PRIORITY + 4UL, NULL) != pdPASS)
     {
@@ -757,7 +828,8 @@ int main(void)
                   (unsigned int)xPortGetFreeHeapSize());
         while (1);
     }
-    
+#endif /* !USE_CCAP_CAMERA */
+
     LOG_INFO("Spawning ML Inference FreeRTOS task (Stack: 4096 words, Priority: %lu)...", (unsigned long)(tskIDLE_PRIORITY + 2UL));
     if (xTaskCreate(vInferenceTask, "Inference", 4096, NULL, tskIDLE_PRIORITY + 2UL, &xInferenceTaskHandle) != pdPASS)
     {

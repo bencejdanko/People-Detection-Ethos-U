@@ -21,6 +21,16 @@
     #define LT7381_LCD_PANEL
 #endif
 
+/* --- CAMERA SOURCE CONFIGURATION ---
+ * Set USE_CCAP_CAMERA to 1 to source frames from the onboard HM1055 camera
+ * via the CCAP connector.
+ *
+ * Set USE_CCAP_CAMERA to 0 to revert to a UDP network video feed.
+ * A host PC must run stream_udp.py (or stream_udp_picam.py) to push RGB888
+ * frames to UDP_STREAM_PORT on this device.
+ */
+#define USE_CCAP_CAMERA                1   // Toggle 1=CCAP onboard camera, 0=UDP network feed
+
 /* --- SYSTEM LOGGING CONFIGURATION --- */
 #define ENABLE_SERIAL_LOGS         1   // Toggle 1/0 to enable/disable serial logging
 #define ENABLE_INFO_LOGS           1   // Toggle 1/0 to enable/disable detailed [INFO] logs
