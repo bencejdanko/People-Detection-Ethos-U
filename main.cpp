@@ -104,8 +104,8 @@ __attribute__((section(".bss.NoInit.activation_buf_sram"), aligned(32))) static 
 #undef OMV_FB_SIZE
 #define OMV_FB_SIZE              (IMAGE_FB_SIZE + 1024)
 
-__attribute__((section(".bss.vram.data"), aligned(32))) static char fb_array[OMV_FB_SIZE + OMV_FB_ALLOC_SIZE];
-__attribute__((section(".bss.vram.data"), aligned(32))) static char jpeg_array[OMV_JPEG_BUF_SIZE];
+__attribute__((section(".bss.hyperram.data"), aligned(32))) static char fb_array[OMV_FB_SIZE + OMV_FB_ALLOC_SIZE];
+__attribute__((section(".bss.hyperram.data"), aligned(32))) static char jpeg_array[OMV_JPEG_BUF_SIZE];
 __attribute__((section(".bss.hyperram.data"), aligned(32))) static char frame_buf1[LCD_FRAME_BUFFER_SIZE];
 __attribute__((section(".bss.hyperram.data"), aligned(32))) static char frame_buf2[LCD_FRAME_BUFFER_SIZE];
 
