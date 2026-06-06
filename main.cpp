@@ -482,33 +482,40 @@ static void vDisplayTask(void *pvParameters)
 #if USE_CCAP_CAMERA
 static void ScaleAndQuantizeCcap(const uint16_t *src, int8_t *dst, const int8_t *lut)
 {
+    const int planeSize = IMAGE_WIDTH * IMAGE_HEIGHT;
+
     for (int y = 0; y < 192; ++y) {
         int src_y = (y * 5) >> 2;
         const uint16_t *srcRow = src + src_y * CCAP_CAPTURE_WIDTH;
-        int8_t *dstRow = dst + y * 192 * 3;
-        
+
+        int8_t *dstR = dst + 0 * planeSize + y * IMAGE_WIDTH;
+        int8_t *dstG = dst + 1 * planeSize + y * IMAGE_WIDTH;
+        int8_t *dstB = dst + 2 * planeSize + y * IMAGE_WIDTH;
+
         int src_idx = 0;
         for (int k = 0; k < 64; ++k) { // 192 / 3 = 64
             uint16_t p0 = srcRow[src_idx + 0];
             uint16_t p1 = srcRow[src_idx + 1];
             uint16_t p2 = srcRow[src_idx + 3];
-            
+
             // Pixel 0 (dst x = 3*k + 0)
-            dstRow[0] = lut[((p0 >> 11) & 0x1F) << 3];
-            dstRow[1] = lut[((p0 >> 5) & 0x3F) << 2];
-            dstRow[2] = lut[(p0 & 0x1F) << 3];
-            
+            dstR[0] = lut[((p0 >> 11) & 0x1F) << 3];
+            dstG[0] = lut[((p0 >> 5) & 0x3F) << 2];
+            dstB[0] = lut[(p0 & 0x1F) << 3];
+
             // Pixel 1 (dst x = 3*k + 1)
-            dstRow[3] = lut[((p1 >> 11) & 0x1F) << 3];
-            dstRow[4] = lut[((p1 >> 5) & 0x3F) << 2];
-            dstRow[5] = lut[(p1 & 0x1F) << 3];
-            
+            dstR[1] = lut[((p1 >> 11) & 0x1F) << 3];
+            dstG[1] = lut[((p1 >> 5) & 0x3F) << 2];
+            dstB[1] = lut[(p1 & 0x1F) << 3];
+
             // Pixel 2 (dst x = 3*k + 2)
-            dstRow[6] = lut[((p2 >> 11) & 0x1F) << 3];
-            dstRow[7] = lut[((p2 >> 5) & 0x3F) << 2];
-            dstRow[8] = lut[(p2 & 0x1F) << 3];
-            
-            dstRow += 9;
+            dstR[2] = lut[((p2 >> 11) & 0x1F) << 3];
+            dstG[2] = lut[((p2 >> 5) & 0x3F) << 2];
+            dstB[2] = lut[(p2 & 0x1F) << 3];
+
+            dstR += 3;
+            dstG += 3;
+            dstB += 3;
             src_idx += 5;
         }
     }
@@ -722,19 +729,40 @@ static void vInferenceTask(void *pvParameters)
         // 1. Quantize the raw RGB pixels into the model input tensor (int8)
         uint64_t t_start_inproc = pmu_get_systick_Count();
         int8_t *signedInputData = inputTensor->data.int8;
+        const int planeSize = IMAGE_WIDTH * IMAGE_HEIGHT;
 
         if (useFastInputQuant)
         {
-            for (int i = 0; i < FRAME_BUFFER_SIZE; ++i)
+            for (int y = 0; y < IMAGE_HEIGHT; ++y)
             {
-                signedInputData[i] = static_cast<int8_t>((((uint16_t)inferenceFrame[i] + 1U) >> 1) - 1);
+                int rowBase = y * IMAGE_WIDTH;
+                int srcIndex = rowBase * IMAGE_CHANNELS;
+
+                for (int x = 0; x < IMAGE_WIDTH; ++x)
+                {
+                    int idx = rowBase + x;
+                    signedInputData[idx] = static_cast<int8_t>((((uint16_t)inferenceFrame[srcIndex + 0] + 1U) >> 1) - 1);
+                    signedInputData[planeSize + idx] = static_cast<int8_t>((((uint16_t)inferenceFrame[srcIndex + 1] + 1U) >> 1) - 1);
+                    signedInputData[2 * planeSize + idx] = static_cast<int8_t>((((uint16_t)inferenceFrame[srcIndex + 2] + 1U) >> 1) - 1);
+                    srcIndex += IMAGE_CHANNELS;
+                }
             }
         }
         else
         {
-            for (int i = 0; i < FRAME_BUFFER_SIZE; ++i)
+            for (int y = 0; y < IMAGE_HEIGHT; ++y)
             {
-                signedInputData[i] = g_quantLUT[inferenceFrame[i]];
+                int rowBase = y * IMAGE_WIDTH;
+                int srcIndex = rowBase * IMAGE_CHANNELS;
+
+                for (int x = 0; x < IMAGE_WIDTH; ++x)
+                {
+                    int idx = rowBase + x;
+                    signedInputData[idx] = g_quantLUT[inferenceFrame[srcIndex + 0]];
+                    signedInputData[planeSize + idx] = g_quantLUT[inferenceFrame[srcIndex + 1]];
+                    signedInputData[2 * planeSize + idx] = g_quantLUT[inferenceFrame[srcIndex + 2]];
+                    srcIndex += IMAGE_CHANNELS;
+                }
             }
         }
         uint64_t t_end_inproc = pmu_get_systick_Count();

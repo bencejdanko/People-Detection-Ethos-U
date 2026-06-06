@@ -34,15 +34,17 @@ void PostProcessor::Process(const int8_t* outputData,
     resultCount = 0;
     const float minDistanceSq = minDistance * minDistance;
 
+    const int channelStride = m_gridWidth * m_gridHeight;
+
     for (int y = 0; y < m_gridHeight; ++y)
     {
         for (int x = 0; x < m_gridWidth; ++x)
         {
-            // The output tensor shape is [1, gridHeight, gridWidth, num_classes]
+            // The output tensor shape is [1, num_classes, gridHeight, gridWidth]
             // We assume num_classes = 2, where:
-            //   Index 0 = Background
-            //   Index 1 = Person (target class)
-            int tensorIdx = (y * m_gridWidth + x) * 2 + 1;
+            //   Channel 0 = Background
+            //   Channel 1 = Person (target class)
+            int tensorIdx = channelStride + y * m_gridWidth + x;
             int8_t quantizedVal = outputData[tensorIdx];
             
             // Dequantize: float = (quantized - zero_point) * scale
