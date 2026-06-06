@@ -622,7 +622,6 @@ static void vInferenceTask(void *pvParameters)
 
     while (1)
     {
-#if USE_CCAP_CAMERA
         /* --- Step A: wait for CCAP DMA into captureBuf to finish --- */
         uint64_t t_start_wait = pmu_get_systick_Count();
         ImageSensor_WaitCaptureDone();
@@ -659,8 +658,10 @@ static void vInferenceTask(void *pvParameters)
         /* inferenceFrame pointer used by the LCD display path below */
         const uint8_t *inferenceFrame = readyBuf;  // RGB565 QVGA
 #else
-        LOG_INFO("Waiting for incoming network video feed...");
+    LOG_INFO("Waiting for incoming network video feed...");
 
+    while (1)
+    {
         // Wait for the raw UDP callback to publish a complete frame.
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
         taskENTER_CRITICAL();
