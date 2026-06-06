@@ -115,13 +115,8 @@ static volatile bool g_lcdBlitPending = false;
 static TaskHandle_t xDisplayTaskHandle = NULL;
 
 #if USE_CCAP_CAMERA
-    #if DISPLAY_UPSCALE_TO_FULLSCREEN
-        #define RENDER_WIDTH   LCD_DISPLAY_WIDTH
-        #define RENDER_HEIGHT  LCD_DISPLAY_HEIGHT
-    #else
-        #define RENDER_WIDTH   CCAP_CAPTURE_WIDTH
-        #define RENDER_HEIGHT  CCAP_CAPTURE_HEIGHT
-    #endif
+    #define RENDER_WIDTH   CCAP_CAPTURE_WIDTH
+    #define RENDER_HEIGHT  CCAP_CAPTURE_HEIGHT
 #else
     #define RENDER_WIDTH   LCD_DISPLAY_WIDTH
     #define RENDER_HEIGHT  LCD_DISPLAY_HEIGHT
@@ -435,12 +430,22 @@ static int32_t LoadModelFromEmbeddedFlash(const unsigned char **modelData)
 static void vDisplayTask(void *pvParameters)
 {
     (void)pvParameters;
+#if USE_CCAP_CAMERA
+    // Centered 640x480 area on the 800x480 LCD panel (for 2x scale of 320x240)
+    S_DISP_RECT sDispRect = {
+        .u32TopLeftX = (LCD_DISPLAY_WIDTH - CCAP_CAPTURE_WIDTH * 2) / 2,     // 80
+        .u32TopLeftY = (LCD_DISPLAY_HEIGHT - CCAP_CAPTURE_HEIGHT * 2) / 2,   // 0
+        .u32BottonRightX = (LCD_DISPLAY_WIDTH - CCAP_CAPTURE_WIDTH * 2) / 2 + CCAP_CAPTURE_WIDTH * 2 - 1, // 719
+        .u32BottonRightY = (LCD_DISPLAY_HEIGHT - CCAP_CAPTURE_HEIGHT * 2) / 2 + CCAP_CAPTURE_HEIGHT * 2 - 1 // 479
+    };
+#else
     S_DISP_RECT sDispRect = {
         .u32TopLeftX = 0,
         .u32TopLeftY = 0,
         .u32BottonRightX = RENDER_WIDTH - 1,
         .u32BottonRightY = RENDER_HEIGHT - 1
     };
+#endif
 
     while (1)
     {
@@ -449,7 +454,11 @@ static void vDisplayTask(void *pvParameters)
 
         uint64_t t_start = pmu_get_systick_Count();
         /* Blit the ready show buffer to EBI screen (blocking PDMA/EBI write) */
+#if USE_CCAP_CAMERA
+        Display_FillRect((uint16_t *)g_lcdShowBuf, &sDispRect, 2);
+#else
         Display_FillRect((uint16_t *)g_lcdShowBuf, &sDispRect, 1);
+#endif
         uint64_t t_end = pmu_get_systick_Count();
         g_displayBlitCycles = (uint32_t)(t_end - t_start);
 
@@ -788,16 +797,8 @@ static void vInferenceTask(void *pvParameters)
 
         DrawStatusOverlay(&ccapSrcImg, currentFPS, detectionCount);
 
-        // 5b. Prep draw buffer: upscale or direct copy of the SRAM image (with overlays) to HyperRAM
-#if DISPLAY_UPSCALE_TO_FULLSCREEN
-        {
-            rectangle_t lcdRoi = { 0, 0, CCAP_CAPTURE_WIDTH, CCAP_CAPTURE_HEIGHT };
-            imlib_nvt_scale(&ccapSrcImg, &dstImg, &lcdRoi);
-        }
-#else
-        // Direct copy of the QVGA RGB565 frame (with overlays)
+        // 5b. Direct copy of the SRAM image (with overlays) to HyperRAM
         memcpy(dstImg.data, inferenceFrame, CCAP_FB_SIZE);
-#endif
 #else
         // UDP path: inferenceFrame is RGB888 192×192 — scale and convert to RGB565.
         ConvertRgb888ToRgb565Scaled(inferenceFrame,
