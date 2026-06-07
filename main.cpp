@@ -433,7 +433,7 @@ static bool ModelContainsEthosUCustomOp(const unsigned char *modelData, size_t m
 
 static int32_t LoadModelFromSDCard(const unsigned char **modelData)
 {
-#define MODEL_FILE "0:\\YOLO.TFL"
+#define MODEL_FILE "0:\\MODEL.TFL"
 #define EACH_READ_SIZE 4096
 	
     TCHAR sd_path[] = { '0', ':', 0 };    /* SD drive started from 0 */	

@@ -24,6 +24,7 @@ static void AnchorMatrixConstruct(
     int inputWidth
 )
 {
+    vAnchorBoxes.reserve(totalAnchors);
     float fStartAnchorValue = 0.5f;
     int iMaxAnchorValue = (inputWidth / stride);
     float fAnchor0StepValue = 0.0f;
@@ -62,6 +63,9 @@ PostProcessor::PostProcessor(int inputWidth, int inputHeight)
     AnchorMatrixConstruct(m_stride8_anchors, YOLOV8N_OD_STRIDE_8, m_stride8_total_anchors, m_inputWidth);
     AnchorMatrixConstruct(m_stride16_anchors, YOLOV8N_OD_STRIDE_16, m_stride16_total_anchors, m_inputWidth);
     AnchorMatrixConstruct(m_stride32_anchors, YOLOV8N_OD_STRIDE_32, m_stride32_total_anchors, m_inputWidth);
+
+    m_softmaxBuf.resize(16);
+    m_detections.reserve(128);
 }
 
 void PostProcessor::CalBoxXYWH(
@@ -100,18 +104,17 @@ void PostProcessor::CalBoxXYWH(
     
     for (int k = 0; k < 4; k++)
     {
-        std::vector<float> XYWHSoftmaxTemp(16);
         float XYWHSoftmaxResult = 0.0f;
 
         for (int i = 0; i < 16; i++)
         {
-            XYWHSoftmaxTemp[i] = scaleBox * (static_cast<float>(tensorOutputBox[k*16 + i]) - zeroPointBox);
+            m_softmaxBuf[i] = scaleBox * (static_cast<float>(tensorOutputBox[k*16 + i]) - zeroPointBox);
         }
 
-        arm::app::math::MathUtils::SoftmaxF32(XYWHSoftmaxTemp);
+        arm::app::math::MathUtils::SoftmaxF32(m_softmaxBuf);
         for (int i = 0; i < 16; i++)
         {
-            XYWHSoftmaxResult = XYWHSoftmaxResult + XYWHSoftmaxTemp[i] * i;
+            XYWHSoftmaxResult = XYWHSoftmaxResult + m_softmaxBuf[i] * i;
         }
         XYWHResult[k] = XYWHSoftmaxResult;
     }
@@ -192,25 +195,22 @@ static float CalculateBoxIOU(Detection& box1, Detection& box2)
     return boxes_intersection / boxes_union;
 }
 
-void PostProcessor::CalculateNMS(std::forward_list<Detection>& detections, float iouThreshold)
+void PostProcessor::CalculateNMS(std::vector<Detection>& detections, float iouThreshold)
 {
-    int idxClass = 0;
-    auto CompareProbs = [idxClass](Detection& prob1, Detection& prob2) {
-        return prob1.prob[idxClass] > prob2.prob[idxClass];
+    auto CompareProbs = [](const Detection& prob1, const Detection& prob2) {
+        return prob1.score > prob2.score;
     };
 
-    for (idxClass = 0; idxClass < YOLOV8N_OD_CLASS; ++idxClass) {
-        detections.sort(CompareProbs);
+    std::sort(detections.begin(), detections.end(), CompareProbs);
 
-        for (auto it = detections.begin(); it != detections.end(); ++it) {
-            if (it->prob[idxClass] == 0.0f) continue;
-            for (auto itc = std::next(it, 1); itc != detections.end(); ++itc) {
-                if (itc->prob[idxClass] == 0.0f) {
-                    continue;
-                }
-                if (CalculateBoxIOU(*it, *itc) > iouThreshold) {
-                    itc->prob[idxClass] = 0.0f;
-                }
+    for (size_t i = 0; i < detections.size(); ++i) {
+        if (detections[i].score == 0.0f) continue;
+        for (size_t j = i + 1; j < detections.size(); ++j) {
+            if (detections[j].score == 0.0f) {
+                continue;
+            }
+            if (CalculateBoxIOU(detections[i], detections[j]) > iouThreshold) {
+                detections[j].score = 0.0f;
             }
         }
     }
@@ -223,7 +223,7 @@ void PostProcessor::CalDetectionBox(
     int stride,
     int totalAnchors,
     float threshold,
-    std::forward_list<Detection>& detections
+    std::vector<Detection>& detections
 )
 {
     float scaleConf;
@@ -267,18 +267,13 @@ void PostProcessor::CalDetectionBox(
             det.cls = cls;
             det.score = maxScore;
 
-            for (int j = 0; j < YOLOV8N_OD_CLASS; j++) {
-                float score = arm::app::math::MathUtils::SigmoidF32(scaleConf * (static_cast<float>(tensorOutputConf[(i * YOLOV8N_OD_CLASS) + j] - zeroPointConf)));
-                det.prob.emplace_back(score);
-            }
-
             CalBoxXYWH(psBoxOutputTensor, vAnchorBoxes, i, stride, totalAnchors, det);
-            detections.emplace_front(det);
+            detections.push_back(det);
         }
     }
 }
 
-void PostProcessor::GetNetworkBoxes(arm::app::Model* model, std::forward_list<Detection>& detections, float threshold)
+void PostProcessor::GetNetworkBoxes(arm::app::Model* model, std::vector<Detection>& detections, float threshold)
 {
     TfLiteTensor* psConfidenceTensor;
     TfLiteTensor* psBoxTensor;
@@ -304,14 +299,14 @@ void PostProcessor::Process(
     size_t& resultCount
 )
 {
-    std::forward_list<Detection> sDetections;
-    GetNetworkBoxes(model, sDetections, threshold);
-    CalculateNMS(sDetections, 0.45f);
+    m_detections.clear();
+    GetNetworkBoxes(model, m_detections, threshold);
+    CalculateNMS(m_detections, 0.45f);
 
     resultCount = 0;
-    for (auto it = sDetections.begin(); it != sDetections.end(); ++it)
+    for (auto it = m_detections.begin(); it != m_detections.end(); ++it)
     {
-        if (it->prob[it->cls] > 0.0f)
+        if (it->score > 0.0f)
         {
             if (resultCount < maxResults)
             {
@@ -321,7 +316,7 @@ void PostProcessor::Process(
                 float w = std::min(std::max(it->w, 0.0f), static_cast<float>(m_inputWidth - 1));
                 float h = std::min(std::max(it->h, 0.0f), static_cast<float>(m_inputHeight - 1));
 
-                results[resultCount++] = {x, y, w, h, it->prob[it->cls], it->cls, {}};
+                results[resultCount++] = {x, y, w, h, it->score, it->cls};
             }
             else
             {

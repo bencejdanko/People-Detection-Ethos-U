@@ -44,7 +44,6 @@ struct Detection
     float h;       // Bounding box height
     float score;   // Confidence score (0.0 to 1.0)
     int cls;       // Class index (0 for person)
-    std::vector<float> prob; // Probabilities for class
 };
 
 struct AnchorBox
@@ -83,22 +82,24 @@ private:
     std::vector<AnchorBox> m_stride8_anchors;
     std::vector<AnchorBox> m_stride16_anchors;
     std::vector<AnchorBox> m_stride32_anchors;
+    std::vector<float> m_softmaxBuf;
+    std::vector<Detection> m_detections;
 
-    void GetNetworkBoxes(arm::app::Model* model, std::forward_list<Detection>& detections, float threshold);
+    void GetNetworkBoxes(arm::app::Model* model, std::vector<Detection>& detections, float threshold);
     void CalDetectionBox(TfLiteTensor* psConfidenceOutputTensor,
                           TfLiteTensor* psBoxOutputTensor,
                           std::vector<AnchorBox>& vAnchorBoxes,
                           int stride,
                           int totalAnchors,
                           float threshold,
-                          std::forward_list<Detection>& detections);
+                          std::vector<Detection>& detections);
     void CalBoxXYWH(TfLiteTensor* psBoxOutputTensor,
                     std::vector<AnchorBox>& vAnchorBoxes,
                     int anchorIndex,
                     int stride,
                     int totalAnchors,
                     Detection& det);
-    void CalculateNMS(std::forward_list<Detection>& detections, float iouThreshold);
+    void CalculateNMS(std::vector<Detection>& detections, float iouThreshold);
 };
 
 } /* namespace model */

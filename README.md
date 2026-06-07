@@ -67,3 +67,24 @@ python3 stream_udp_picam.py \
 
 * [NuMaker-X-M55M1D User Manual](https://www.nuvoton.com/export/resource-files/en-us--UM_NuMaker-X-M55M1D_EN_Rev1.01.pdf)
 * [Nuvoton NuMicro ICP Programming Tool](https://www.nuvoton.com/tool-and-software/debugger-and-programmer/1-to-1-debugger-and-programmer/nu-link2-pro/?index=4)
+
+## YOLOv8n Person Counting Deployment
+
+We have ported the firmware to run object detection using a YOLOv8n model instead of the original grid-based FOMO model.
+
+### 1. Obtain and Prepare the Model
+- Locate the NPU-ready (Vela-compiled) YOLOv8n model. You can find the base model at `m55m1-ElevatorCounting-YOLOv8n/Model/YOLOv8n-elevator-od.tflite`.
+- Copy this `.tflite` file to the root directory of a FAT32-formatted microSD card.
+- Rename the file on the SD card to **`YOLO.TFL`** (case-sensitive).
+
+### 2. Configure Board Settings
+Before compiling the project in Keil MDK, ensure that CCAP camera mode is active in `board_config.h`:
+```c
+#define USE_CCAP_CAMERA                1   // Set to 1 to enable the onboard camera feed
+```
+
+### 3. Flash and Run
+- Insert the microSD card into the board.
+- Compile and flash the project via Keil uVision5.
+- The LCD display will draw green bounding boxes around detected people and display the live person count and frame rate in a clean status overlay.
+
