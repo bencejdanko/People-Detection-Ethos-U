@@ -58,9 +58,10 @@ extern "C" {
 #endif /* USE_CCAP_CAMERA */
 
 /* Model and ML includes */
+#include "ff.h"
+#include "ModelFileReader.h"
 #include "InferenceModel.hpp"
 #include "PostProcessor.hpp"
-#include "embedded_model.h"
 
 #if defined(__EBI_LCD_PANEL__)
 #include "Display.h"
@@ -410,17 +411,17 @@ static void UdpVideoInitCallback(void *arg)
 }
 #endif /* !USE_CCAP_CAMERA */
 
-static bool EmbeddedModelContainsEthosUCustomOp(void)
+static bool ModelContainsEthosUCustomOp(const unsigned char *modelData, size_t modelSize)
 {
     static const char ethosUOpName[] = "ethos-u";
     const size_t opNameLen = sizeof(ethosUOpName) - 1;
 
-    if (g_model_tflite_len < opNameLen) {
+    if (modelSize < opNameLen) {
         return false;
     }
 
-    for (unsigned int i = 0; i <= g_model_tflite_len - opNameLen; ++i) {
-        if (std::memcmp(&g_model_tflite[i], ethosUOpName, opNameLen) == 0) {
+    for (unsigned int i = 0; i <= modelSize - opNameLen; ++i) {
+        if (std::memcmp(&modelData[i], ethosUOpName, opNameLen) == 0) {
             return true;
         }
     }
@@ -428,12 +429,46 @@ static bool EmbeddedModelContainsEthosUCustomOp(void)
     return false;
 }
 
-/* Use the baked-in model from internal flash. Ethos-U can read this region. */
-static int32_t LoadModelFromEmbeddedFlash(const unsigned char **modelData)
+#define MODEL_AT_HYPERRAM_ADDR (0x82400000)
+
+static int32_t LoadModelFromSDCard(const unsigned char **modelData)
 {
-    *modelData = g_model_tflite;
-    LOG_INFO("Using model directly from embedded flash (%u bytes).", g_model_tflite_len);
-    return (int32_t)g_model_tflite_len;
+#define MODEL_FILE "0:\\YOLO.TFL"
+#define EACH_READ_SIZE 4096
+	
+    TCHAR sd_path[] = { '0', ':', 0 };    /* SD drive started from 0 */	
+    f_chdrive(sd_path);          /* set default path */
+
+	int32_t i32FileSize;
+	int32_t i32FileReadIndex = 0;
+	int32_t i32Read;
+	
+	if(!ModelFileReader_Initialize(MODEL_FILE))
+	{
+        LOG_ERROR("Unable to open model file %s on SD card.", MODEL_FILE);		
+		return -1;
+	}
+	
+	i32FileSize = ModelFileReader_FileSize();
+    LOG_INFO("Model file size: %d bytes.", (int)i32FileSize);
+
+	while(i32FileReadIndex < i32FileSize)
+	{
+		i32Read = ModelFileReader_ReadData((BYTE *)(MODEL_AT_HYPERRAM_ADDR + i32FileReadIndex), EACH_READ_SIZE);
+		if(i32Read < 0)
+			break;
+		i32FileReadIndex += i32Read;
+	}
+	
+	if(i32FileReadIndex < i32FileSize)
+	{
+        LOG_ERROR("Read Model file size is not enough (expected %d, read %d).", (int)i32FileSize, (int)i32FileReadIndex);		
+		return -2;
+	}
+	
+	ModelFileReader_Finish();
+	*modelData = (const unsigned char *)MODEL_AT_HYPERRAM_ADDR;
+	return i32FileSize;
 }
 
 /* --- LCD Display Task (EBI Blitting) --- */
@@ -480,45 +515,38 @@ static void vDisplayTask(void *pvParameters)
 #endif // __EBI_LCD_PANEL__
 
 #if USE_CCAP_CAMERA
-static void ScaleAndQuantizeCcap(const uint16_t *src, int8_t *dst, const int8_t *lut)
+static void ScaleQuantizeCcapYolo(const uint16_t *src, int8_t *dst, const int8_t *lut)
 {
-    const int planeSize = IMAGE_WIDTH * IMAGE_HEIGHT;
+    // Pad top 24 rows
+    int8_t padVal = lut[0];
+    memset(dst, padVal, 24 * 192 * 3);
 
-    for (int y = 0; y < 192; ++y) {
-        int src_y = (y * 5) >> 2;
+    // Scale and quantize center 144 rows
+    for (int y = 0; y < 144; ++y) {
+        int src_y = (y * 5) / 3;
         const uint16_t *srcRow = src + src_y * CCAP_CAPTURE_WIDTH;
+        int8_t *dstRow = dst + (24 + y) * 192 * 3;
 
-        int8_t *dstR = dst + 0 * planeSize + y * IMAGE_WIDTH;
-        int8_t *dstG = dst + 1 * planeSize + y * IMAGE_WIDTH;
-        int8_t *dstB = dst + 2 * planeSize + y * IMAGE_WIDTH;
+        for (int x = 0; x < 192; ++x) {
+            int src_x = (x * 5) / 3;
+            uint16_t p = srcRow[src_x];
 
-        int src_idx = 0;
-        for (int k = 0; k < 64; ++k) { // 192 / 3 = 64
-            uint16_t p0 = srcRow[src_idx + 0];
-            uint16_t p1 = srcRow[src_idx + 1];
-            uint16_t p2 = srcRow[src_idx + 3];
+            uint8_t r = ((p >> 11) & 0x1F) << 3;
+            uint8_t g = ((p >> 5) & 0x3F) << 2;
+            uint8_t b = (p & 0x1F) << 3;
 
-            // Pixel 0 (dst x = 3*k + 0)
-            dstR[0] = lut[((p0 >> 11) & 0x1F) << 3];
-            dstG[0] = lut[((p0 >> 5) & 0x3F) << 2];
-            dstB[0] = lut[(p0 & 0x1F) << 3];
+            uint8_t gray = (r + g + b) * 85 >> 8;
+            int8_t qVal = lut[gray];
 
-            // Pixel 1 (dst x = 3*k + 1)
-            dstR[1] = lut[((p1 >> 11) & 0x1F) << 3];
-            dstG[1] = lut[((p1 >> 5) & 0x3F) << 2];
-            dstB[1] = lut[(p1 & 0x1F) << 3];
-
-            // Pixel 2 (dst x = 3*k + 2)
-            dstR[2] = lut[((p2 >> 11) & 0x1F) << 3];
-            dstG[2] = lut[((p2 >> 5) & 0x3F) << 2];
-            dstB[2] = lut[(p2 & 0x1F) << 3];
-
-            dstR += 3;
-            dstG += 3;
-            dstB += 3;
-            src_idx += 5;
+            int dst_idx = x * 3;
+            dstRow[dst_idx + 0] = qVal;
+            dstRow[dst_idx + 1] = qVal;
+            dstRow[dst_idx + 2] = qVal;
         }
     }
+
+    // Pad bottom 24 rows
+    memset(dst + (168 * 192 * 3), padVal, 24 * 192 * 3);
 }
 #endif
 
@@ -527,18 +555,17 @@ static void vInferenceTask(void *pvParameters)
 {
     (void)pvParameters;
     
-    // Use model from embedded flash.
+    // Use model from SD card.
     const unsigned char *modelData = NULL;
-    int32_t modelSize = LoadModelFromEmbeddedFlash(&modelData);
+    int32_t modelSize = LoadModelFromSDCard(&modelData);
     if (modelSize <= 0) {
-        LOG_ERROR("Failed to load embedded model.");
+        LOG_ERROR("Failed to load model from SD card.");
         vTaskDelete(NULL);
         return;
     }
 
-    if (!EmbeddedModelContainsEthosUCustomOp()) {
-        LOG_ERROR("Embedded model is not Vela-optimized for Ethos-U (missing custom op \"ethos-u\").");
-        LOG_ERROR("Regenerate embedded_model.h from vela_output/*.tflite, not the original int8 model.");
+    if (!ModelContainsEthosUCustomOp(modelData, modelSize)) {
+        LOG_ERROR("Model is not Vela-optimized for Ethos-U (missing custom op \"ethos-u\").");
         vTaskDelete(NULL);
         return;
     }
@@ -566,9 +593,7 @@ static void vInferenceTask(void *pvParameters)
     // Initialize C++ post-processor
     arm::app::model::PostProcessor postProcessor(
         MODEL_INPUT_WIDTH, 
-        MODEL_INPUT_HEIGHT, 
-        MODEL_OUTPUT_GRID_SIZE, 
-        MODEL_OUTPUT_GRID_SIZE
+        MODEL_INPUT_HEIGHT
     );
 
     // Retrieve input & output tensors
@@ -695,7 +720,7 @@ static void vInferenceTask(void *pvParameters)
          *             the tensor input buffer (int8 192x192 RGB888).         --- */
         uint64_t t_start_inproc = pmu_get_systick_Count();
         ccapSrcImg.data = readyBuf;
-        ScaleAndQuantizeCcap((const uint16_t *)readyBuf, inputTensor->data.int8, g_quantLUT);
+        ScaleQuantizeCcapYolo((const uint16_t *)readyBuf, inputTensor->data.int8, g_quantLUT);
         uint64_t t_end_inproc = pmu_get_systick_Count();
         sumInputProc += (t_end_inproc - t_start_inproc);
 
@@ -779,11 +804,8 @@ static void vInferenceTask(void *pvParameters)
         uint64_t t_start_post = pmu_get_systick_Count();
         const int8_t *outputData = outputTensor->data.int8;
         postProcessor.Process(
-            outputData,
+            &model,
             MODEL_DEFAULT_THRESHOLD,
-            MODEL_MIN_PEAK_DISTANCE,
-            outQuantParams.scale,
-            outQuantParams.offset,
             detections,
             MODEL_MAX_DETECTIONS,
             detectionCount
@@ -823,29 +845,37 @@ static void vInferenceTask(void *pvParameters)
 #if defined(__EBI_LCD_PANEL__)
         uint64_t t_start_render = pmu_get_systick_Count();
 #if USE_CCAP_CAMERA
-        // 5a. Draw crosshair indicators directly on the fast QVGA SRAM image first
+        // 5a. Draw YOLOv8n bounding boxes directly on the fast QVGA SRAM image first
         for (size_t i = 0; i < detectionCount; ++i)
         {
             const arm::app::model::Detection& det = detections[i];
-            int x_disp = static_cast<int>((det.x * CCAP_CAPTURE_WIDTH) / IMAGE_WIDTH);
-            int y_disp = static_cast<int>((det.y * CCAP_CAPTURE_HEIGHT) / IMAGE_HEIGHT);
-            int box_w = CCAP_CAPTURE_WIDTH / 24;
-            int box_h = CCAP_CAPTURE_HEIGHT / 24;
-            if (box_w < 8) box_w = 8;
-            if (box_h < 8) box_h = 8;
-
-            // Draw a bounding crosshair directly on CCAP source image (in fast SRAM2)
-            imlib_draw_rectangle(&ccapSrcImg,
-                                 x_disp - (box_w / 2),
-                                 y_disp - (box_h / 2),
-                                 box_w,
-                                 box_h,
-                                 COLOR_R5_G6_B5_TO_RGB565(31, 0, 0),
-                                 2,
-                                 false);
             
-            // Draw center dot
-            imlib_draw_rectangle(&ccapSrcImg, x_disp - 1, y_disp - 1, 2, 2, COLOR_R5_G6_B5_TO_RGB565(31, 31, 0), 1, true);
+            // Map back to CCAP coordinate space (undoing 24px letterbox pad)
+            float x_scaled = det.x;
+            float y_scaled = det.y - 24.0f;
+            
+            int x_disp = static_cast<int>(x_scaled * 5.0f / 3.0f);
+            int y_disp = static_cast<int>(y_scaled * 5.0f / 3.0f);
+            int w_disp = static_cast<int>(det.w * 5.0f / 3.0f);
+            int h_disp = static_cast<int>(det.h * 5.0f / 3.0f);
+
+            // Clip coordinates to screen bounds (320x240)
+            if (x_disp < 0) { w_disp += x_disp; x_disp = 0; }
+            if (y_disp < 0) { h_disp += y_disp; y_disp = 0; }
+            if (x_disp + w_disp > CCAP_CAPTURE_WIDTH) { w_disp = CCAP_CAPTURE_WIDTH - x_disp; }
+            if (y_disp + h_disp > CCAP_CAPTURE_HEIGHT) { h_disp = CCAP_CAPTURE_HEIGHT - y_disp; }
+
+            if (w_disp > 0 && h_disp > 0)
+            {
+                imlib_draw_rectangle(&ccapSrcImg,
+                                     x_disp,
+                                     y_disp,
+                                     w_disp,
+                                     h_disp,
+                                     COLOR_R5_G6_B5_TO_RGB565(0, 63, 0), // Clean Green Box
+                                     2,
+                                     false);
+            }
         }
 
         DrawStatusOverlay(&ccapSrcImg, currentFPS, detectionCount);
@@ -859,29 +889,31 @@ static void vInferenceTask(void *pvParameters)
                                     LCD_DISPLAY_WIDTH,
                                     LCD_DISPLAY_HEIGHT);
 
-        // Draw crosshair indicators at each person peak
+        // Draw bounding boxes for detected people
         for (size_t i = 0; i < detectionCount; ++i)
         {
             const arm::app::model::Detection& det = detections[i];
             int x_disp = static_cast<int>((det.x * RENDER_WIDTH) / IMAGE_WIDTH);
             int y_disp = static_cast<int>((det.y * RENDER_HEIGHT) / IMAGE_HEIGHT);
-            int box_w = RENDER_WIDTH / 24;
-            int box_h = RENDER_HEIGHT / 24;
-            if (box_w < 8) box_w = 8;
-            if (box_h < 8) box_h = 8;
+            int w_disp = static_cast<int>((det.w * RENDER_WIDTH) / IMAGE_WIDTH);
+            int h_disp = static_cast<int>((det.h * RENDER_HEIGHT) / IMAGE_HEIGHT);
 
-            // Draw a bounding crosshair around the detected center peak
-            imlib_draw_rectangle(&dstImg,
-                                 x_disp - (box_w / 2),
-                                 y_disp - (box_h / 2),
-                                 box_w,
-                                 box_h,
-                                 COLOR_R5_G6_B5_TO_RGB565(31, 0, 0),
-                                 2,
-                                 false);
-            
-            // Draw center dot
-            imlib_draw_rectangle(&dstImg, x_disp - 1, y_disp - 1, 2, 2, COLOR_R5_G6_B5_TO_RGB565(31, 31, 0), 1, true);
+            if (x_disp < 0) { w_disp += x_disp; x_disp = 0; }
+            if (y_disp < 0) { h_disp += y_disp; y_disp = 0; }
+            if (x_disp + w_disp > RENDER_WIDTH) { w_disp = RENDER_WIDTH - x_disp; }
+            if (y_disp + h_disp > RENDER_HEIGHT) { h_disp = RENDER_HEIGHT - y_disp; }
+
+            if (w_disp > 0 && h_disp > 0)
+            {
+                imlib_draw_rectangle(&dstImg,
+                                     x_disp,
+                                     y_disp,
+                                     w_disp,
+                                     h_disp,
+                                     COLOR_R5_G6_B5_TO_RGB565(0, 63, 0), // Clean Green Box
+                                     2,
+                                     false);
+            }
         }
 
         DrawStatusOverlay(&dstImg, currentFPS, detectionCount);

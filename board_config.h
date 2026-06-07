@@ -86,7 +86,7 @@
 #define MODEL_OUTPUT_GRID_SIZE     24          // 24x24 grid outputs from final Conv2D layer
 
 /* Inference parameters */
-#define MODEL_DEFAULT_THRESHOLD    0.50f       // Detection confidence threshold
+#define MODEL_DEFAULT_THRESHOLD    0.40f       // Detection confidence threshold
 #define MODEL_MIN_PEAK_DISTANCE    2.0f        // Grid-space NMS threshold (minimum distance between peaks)
 #define MODEL_MAX_DETECTIONS       32          // Fixed result capacity; avoids heap allocation in post-processing
 
