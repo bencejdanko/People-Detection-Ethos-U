@@ -2,11 +2,22 @@
 
 Uses YOLOv8n to conduct people counting, and pushes results to an HTTP server over Wifi.
 
+YOLOv8n runs 20FPS at 640x480 centered. Sends people counts to dashboard over Wi-Fi connection.
+
 ## Usage
+
+Install necessary libraries:
+
+```bash
+git clone https://github.com/OpenNuvoton/ML_M55M1_SampleCode
+
+git clone https://github.com/OpenNuvoton/M55M1BSP
+```
 
 Load `MODEL.TFL` into the root of the SD card.
 
-Start the web server:
+Start the web server, and make sure it is accessible under config in `board_config.h`.
+
 ```bash
 python web_server.py
 ```
