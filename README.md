@@ -2,6 +2,8 @@
 
 Uses YOLOv8n to conduct people counting, and pushes results to an HTTP server over Wifi.
 
+<img width="620" height="311" alt="image" src="https://github.com/user-attachments/assets/ebb78be8-2804-4c2b-ab90-8e01cee6e337" />
+
 YOLOv8n runs 20FPS at 640x480 centered. Sends people counts to dashboard over Wi-Fi connection.
 
 ## Usage
