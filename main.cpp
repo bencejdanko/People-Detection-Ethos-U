@@ -62,6 +62,7 @@ extern "C" {
 #include "ModelFileReader.h"
 #include "InferenceModel.hpp"
 #include "PostProcessor.hpp"
+#include "wifi_push.hpp"
 
 #if defined(__EBI_LCD_PANEL__)
 #include "Display.h"
@@ -820,6 +821,17 @@ static void vInferenceTask(void *pvParameters)
         uint64_t t_end_post = pmu_get_systick_Count();
         sumPostProcess += (t_end_post - t_start_post);
 
+        // Calculate and push count of detected people (class 0)
+        size_t wifiPersonCount = 0;
+        for (size_t i = 0; i < detectionCount; ++i)
+        {
+            if (detections[i].cls == 0)
+            {
+                wifiPersonCount++;
+            }
+        }
+        WifiPush::PushCount(static_cast<int>(wifiPersonCount));
+
         // 4. Update Metrics (FPS and Person Counts)
         frameCount++;
         uint64_t now = pmu_get_systick_Count();
@@ -1175,6 +1187,10 @@ int main(void)
                   (unsigned int)xPortGetFreeHeapSize());
         while (1);
     }
+
+    // Configure and start Wi-Fi pushes
+    WifiPush::Configure(WIFI_SSID, WIFI_PASS, SERVER_HOST, SERVER_PORT, SERVER_PATH);
+    WifiPush::Start();
 
     // Start FreeRTOS scheduler
     LOG_INFO("Starting FreeRTOS Task Scheduler...");

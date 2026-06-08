@@ -90,4 +90,12 @@
 #define MODEL_MIN_PEAK_DISTANCE    2.0f        // Grid-space NMS threshold (minimum distance between peaks)
 #define MODEL_MAX_DETECTIONS       32          // Fixed result capacity; avoids heap allocation in post-processing
 
+/* --- WIFI PUSH SERVER CONFIGURATION --- */
+#define WIFI_SSID                  "YOUR_WIFI_SSID"
+#define WIFI_PASS                  "YOUR_WIFI_PASSWORD"
+#define SERVER_HOST                "elevator.visiondustry.com"
+#define SERVER_PORT                80
+#define SERVER_PATH                "/count"
+#define SERVER_TOKEN               "your-secure-secret-token"
+
 #endif // __BOARD_CONFIG_H__

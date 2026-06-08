@@ -505,6 +505,11 @@
               <FilePath>main.cpp</FilePath>
             </File>
             <File>
+              <FileName>..\wifi_push.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>wifi_push.cpp</FilePath>
+            </File>
+            <File>
               <FileName>..\mpu_config_M55M1.h</FileName>
               <FileType>5</FileType>
               <FilePath>mpu_config_M55M1.h</FilePath>
