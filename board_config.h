@@ -86,8 +86,17 @@
 #define MODEL_OUTPUT_GRID_SIZE     24          // 24x24 grid outputs from final Conv2D layer
 
 /* Inference parameters */
-#define MODEL_DEFAULT_THRESHOLD    0.50f       // Detection confidence threshold
+#define MODEL_DEFAULT_THRESHOLD    0.40f       // Detection confidence threshold
 #define MODEL_MIN_PEAK_DISTANCE    2.0f        // Grid-space NMS threshold (minimum distance between peaks)
 #define MODEL_MAX_DETECTIONS       32          // Fixed result capacity; avoids heap allocation in post-processing
+
+/* --- WIFI PUSH SERVER CONFIGURATION --- */
+#define WIFI_SSID                  "vision"
+#define WIFI_PASS                  "nuvotonvision"
+#define SERVER_HOST                "elevator.visiondustry.com"
+#define SERVER_PORT                80
+#define SERVER_PATH                "/count"
+#define SERVER_TOKEN               "your-secure-secret-token"
+#define WIFI_PUSH_INTERVAL_MS      3000        // Push interval in milliseconds (e.g. 3000 = 3 seconds)
 
 #endif // __BOARD_CONFIG_H__

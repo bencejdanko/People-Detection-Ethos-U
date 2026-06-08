@@ -1,66 +1,14 @@
 # Edge AI Overhead People Counting with the NuMaker-X-M55M1D
 
-People counting solution for the NuMaker-X-M55M1D. Uses a UDP server to listen to camera feed over LAN, and an extremely efficient FOMO model to conduct people counting.
+Uses YOLOv8n to conduct people counting, and pushes results to an HTTP server over Wifi.
 
 ## Usage
 
-### Toggle Video Source
+Load `MODEL.TFL` into the root of the SD card.
 
-This project supports two video sources:
-1. The onboard CCAP camera
-2. A UDP network feed
-
-To toggle between the two, modify the `USE_CCAP_CAMERA` macro in `board_config.h`.
-
-### FOMO
-
-A FOMO model can be trained using an open source library we have created:
-
-* [fomo-edge-ai/fomo](https://github.com/fomo-edge-ai/fomo)
-
-We have prepared pre-trained models available at the [Hugging Face Model Hub](https://huggingface.co/fomo-edge-ai/fomo/fomo-edge-ai/fomo).
-
-1. Prepare Model Weights:
-   Download the pre-trained FOMO model weights:
-   * [Download pre-trained weights](https://huggingface.co/fomo-edge-ai/fomo/resolve/main/sjsu_headcount_m_int8_vela.tflite?download=true)
-   
-   Place the downloaded `.tflite` file at the root of this repository and rename it to `model.tflite`.
-
-2. Run `python3 tflite_to_c.py` to serialize the model before uploading it to the firmware.
-
-### Running the Streamer
-
-Stream a live feed from the default webcam (`0`):
+Start the web server:
 ```bash
-python3 stream_udp.py --ip 192.168.0.30 --port 5005 --source 0 --fps 15 --chunk-size 1450 --chunk-delay 0.0005
-```
-
-Stream a recorded MP4 file from your local machine:
-
-```bash
-# You can clone some sample videos
-# git clone https://huggingface.co/datasets/bdanko/sjsu-people-counting
-
-python3 stream_udp_file.py --ip 192.168.0.30 --port 5005  --video-file "sjsu-people-counting\raw_mp4\FIXED_feed_20260530_013111_0003.mp4" --fps 30 --channels 3 --chunk-size 1450 --chunk-delay 0 --no-display
-```
-
-### Run Streamer from Raspberry Pi
-
-```
-# install necessary libraries
-sudo apt install python3-opencv
-sudo apt install python3-picamera2
-sudo apt install gstreamer1.0-libcamera gstreamer1.0-plugins-good
-```
-
-```
-python3 stream_udp_picam.py \
-  --ip 192.168.0.30 \
-  --port 5005 \
-  --source 0 \
-  --fps 15 \
-  --chunk-size 1450 \
-  --chunk-delay 0
+python web_server.py
 ```
 
 ## Additional Resources

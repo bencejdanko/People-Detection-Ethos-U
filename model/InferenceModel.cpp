@@ -52,6 +52,11 @@ bool arm::app::InferenceModel::EnlistOperations()
         printf_err("Failed to add Reshape to op resolver\n");
         return false;
     }
-
+ 
+    if (this->m_opResolver.AddTranspose() != kTfLiteOk) {
+        printf_err("Failed to add Transpose to op resolver\n");
+        return false;
+    }
+ 
     return true;
 }
