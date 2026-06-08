@@ -20,6 +20,7 @@ namespace WifiPush {
 
     static volatile int g_latestCount = 0;
     static volatile bool g_newCountAvailable = false;
+    static volatile bool s_wifiConnected = false;
 
     void Configure(const char* ssid, const char* pass, const char* host, uint16_t port, const char* path) {
         strncpy(g_ssid, ssid, sizeof(g_ssid) - 1);
@@ -35,6 +36,10 @@ namespace WifiPush {
     void PushCount(int count) {
         g_latestCount = count;
         g_newCountAvailable = true;
+    }
+
+    bool IsConnected(void) {
+        return s_wifiConnected;
     }
 
     static void UART_ResetFIFO(void) {
@@ -187,48 +192,32 @@ namespace WifiPush {
 
         Wifi_UART_Init();
 
-        bool wifi_connected = false;
-        int last_sent_count = -1;
-        uint32_t last_sent_time = 0;
+        s_wifiConnected = false;
 
         while (1) {
-            if (!wifi_connected) {
+            if (!s_wifiConnected) {
                 if (strlen(g_ssid) > 0) {
-                    wifi_connected = ConnectToAP();
+                    s_wifiConnected = ConnectToAP();
                 }
-                if (!wifi_connected) {
+                if (!s_wifiConnected) {
                     vTaskDelay(pdMS_TO_TICKS(10000));
                     continue;
                 }
             }
 
-            uint32_t now = xTaskGetTickCount();
-            bool should_push = false;
             int current_count = g_latestCount;
-
-            // Trigger push if count changes or 15-second heartbeat has elapsed
-            if (g_newCountAvailable && current_count != last_sent_count) {
-                should_push = true;
-                g_newCountAvailable = false;
-            } else if ((now - last_sent_time) >= pdMS_TO_TICKS(15000)) {
-                should_push = true;
+            if (SendHTTPPost(current_count)) {
+                // Sent successfully
+            } else {
+                printf("[WIFI] Network transfer failed, reconnecting...\n");
+                s_wifiConnected = false;
             }
 
-            if (should_push) {
-                if (SendHTTPPost(current_count)) {
-                    last_sent_count = current_count;
-                    last_sent_time = xTaskGetTickCount();
-                } else {
-                    printf("[WIFI] Network transfer failed, reconnecting...\n");
-                    wifi_connected = false;
-                }
-            }
-
-            vTaskDelay(pdMS_TO_TICKS(1000));
+            vTaskDelay(pdMS_TO_TICKS(WIFI_PUSH_INTERVAL_MS));
         }
     }
 
     void Start(void) {
-        xTaskCreate(vWifiPushTask, "WifiPush", 1024, NULL, tskIDLE_PRIORITY + 1UL, NULL);
+        xTaskCreate(vWifiPushTask, "WifiPush", 1024, NULL, tskIDLE_PRIORITY + 4UL, NULL);
     }
 }

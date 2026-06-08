@@ -172,11 +172,11 @@ static void CopyDeviceIpAddress(char *dst, size_t dstSize)
 
 static void DrawStatusOverlay(image_t *img, uint64_t fps, size_t peopleCount)
 {
-    char lines[3][40];
+    char lines[4][40];
     int textScale = (img->h >= 480) ? 4 : 2;
     int lineSpacing = FONT_HTIGHT * textScale + 8;
     const int statusX = kStatusTextMargin;
-    const int statusY = img->h - kStatusTextMargin - (lineSpacing * 3);
+    const int statusY = img->h - kStatusTextMargin - (lineSpacing * 4);
 
     sprintf(lines[0], "FPS: %llu", fps);
     sprintf(lines[1], "PEOPLE: %d", (int)peopleCount);
@@ -188,9 +188,14 @@ static void DrawStatusOverlay(image_t *img, uint64_t fps, size_t peopleCount)
     sprintf(lines[2], "IP: %s", ipAddress);
 #endif
 
+    bool wifiConnected = WifiPush::IsConnected();
+    sprintf(lines[3], "WIFI: %s", wifiConnected ? "Connected" : "Disconnected");
+    uint16_t wifiColor = wifiConnected ? COLOR_R5_G6_B5_TO_RGB565(0, 63, 0) : COLOR_R5_G6_B5_TO_RGB565(31, 0, 0);
+
     imlib_draw_string(img, statusX, statusY, lines[0], kStatusTextColor, textScale, 0, 0, false, false, false, false, 0, false, false);
     imlib_draw_string(img, statusX, statusY + lineSpacing, lines[1], kStatusTextColor, textScale, 0, 0, false, false, false, false, 0, false, false);
     imlib_draw_string(img, statusX, statusY + (lineSpacing * 2), lines[2], kStatusTextColor, textScale, 0, 0, false, false, false, false, 0, false, false);
+    imlib_draw_string(img, statusX, statusY + (lineSpacing * 3), lines[3], wifiColor, textScale, 0, 0, false, false, false, false, 0, false, false);
 }
 
 static void DrawStatusScreen(uint64_t fps, size_t peopleCount)

@@ -32,17 +32,19 @@ async def update_count(payload: CountPayload):
     print(f"[{now}] Received count: {count}")
     return {"status": "ok", "received": count}
 
+@app.get("/api/logs")
+async def get_api_logs():
+    return list(logs)
+
 @app.get("/", response_class=HTMLResponse)
 async def get_logs():
     html_content = """
     <html>
     <head>
-        <title>People Counting Logs</title>
-        <meta http-equiv="refresh" content="2">
+        <title>M55M1D Logs</title>
     </head>
     <body>
-        <h1>People Counting Logs</h1>
-        <p>Last 20 updates (auto-refreshes every 2 seconds):</p>
+        <h1>M55M1D Edge-AI People Counting Logs</h1>
         <table border="1" cellpadding="5" cellspacing="0">
             <thead>
                 <tr>
@@ -50,25 +52,39 @@ async def get_logs():
                     <th>Count</th>
                 </tr>
             </thead>
-            <tbody>
-    """
-    for entry in logs:
-        html_content += f"""
+            <tbody id="log-rows">
                 <tr>
-                    <td>{entry['time']}</td>
-                    <td>{entry['count']}</td>
+                    <td colspan="2" style="text-align:center;">Loading logs...</td>
                 </tr>
-        """
-    if not logs:
-        html_content += """
-                <tr>
-                    <td colspan="2" style="text-align:center;">No records received yet</td>
-                </tr>
-        """
-        
-    html_content += """
             </tbody>
         </table>
+
+        <script>
+            async function updateLogs() {
+                try {
+                    const response = await fetch('/api/logs');
+                    const data = await response.json();
+                    const tbody = document.getElementById('log-rows');
+                    
+                    if (data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;">No records received yet</td></tr>';
+                        return;
+                    }
+                    
+                    let html = '';
+                    for (const entry of data) {
+                        html += `<tr><td>${entry.time}</td><td>${entry.count}</td></tr>`;
+                    }
+                    tbody.innerHTML = html;
+                } catch (err) {
+                    console.error('Failed to fetch logs:', err);
+                }
+            }
+
+            // Poll every 1 second reactively without reloading the page
+            setInterval(updateLogs, 1000);
+            updateLogs();
+        </script>
     </body>
     </html>
     """
