@@ -535,13 +535,10 @@ static void ScaleQuantizeCcapYolo(const uint16_t *src, int8_t *dst, const int8_t
             uint8_t g = ((p >> 5) & 0x3F) << 2;
             uint8_t b = (p & 0x1F) << 3;
 
-            uint8_t gray = (r + g + b) * 85 >> 8;
-            int8_t qVal = lut[gray];
-
             int dst_idx = x * 3;
-            dstRow[dst_idx + 0] = qVal;
-            dstRow[dst_idx + 1] = qVal;
-            dstRow[dst_idx + 2] = qVal;
+            dstRow[dst_idx + 0] = lut[r];
+            dstRow[dst_idx + 1] = lut[g];
+            dstRow[dst_idx + 2] = lut[b];
         }
     }
 
@@ -607,7 +604,18 @@ static void vInferenceTask(void *pvParameters)
     // Initialize the fast quantization lookup table using the exact model quantization parameters
     for (int val = 0; val < 256; ++val)
     {
-        float normalized = static_cast<float>(val) / 255.0f;
+        float normalized = static_cast<float>(val);
+        if (inQuantParams.scale < 0.05f)
+        {
+            if (inQuantParams.offset > -100)
+            {
+                normalized = (normalized - 127.5f) / 127.5f;
+            }
+            else
+            {
+                normalized = normalized / 255.0f;
+            }
+        }
         int32_t quantized = static_cast<int32_t>(roundf(normalized / inQuantParams.scale)) + inQuantParams.offset;
         if (quantized < -128) quantized = -128;
         if (quantized > 127)  quantized = 127;
@@ -754,7 +762,6 @@ static void vInferenceTask(void *pvParameters)
         // 1. Quantize the raw RGB pixels into the model input tensor (int8)
         uint64_t t_start_inproc = pmu_get_systick_Count();
         int8_t *signedInputData = inputTensor->data.int8;
-        const int planeSize = IMAGE_WIDTH * IMAGE_HEIGHT;
 
         if (useFastInputQuant)
         {
@@ -765,10 +772,10 @@ static void vInferenceTask(void *pvParameters)
 
                 for (int x = 0; x < IMAGE_WIDTH; ++x)
                 {
-                    int idx = rowBase + x;
-                    signedInputData[idx] = static_cast<int8_t>((((uint16_t)inferenceFrame[srcIndex + 0] + 1U) >> 1) - 1);
-                    signedInputData[planeSize + idx] = static_cast<int8_t>((((uint16_t)inferenceFrame[srcIndex + 1] + 1U) >> 1) - 1);
-                    signedInputData[2 * planeSize + idx] = static_cast<int8_t>((((uint16_t)inferenceFrame[srcIndex + 2] + 1U) >> 1) - 1);
+                    int dstIndex = (rowBase + x) * IMAGE_CHANNELS;
+                    signedInputData[dstIndex + 0] = static_cast<int8_t>((((uint16_t)inferenceFrame[srcIndex + 0] + 1U) >> 1) - 1);
+                    signedInputData[dstIndex + 1] = static_cast<int8_t>((((uint16_t)inferenceFrame[srcIndex + 1] + 1U) >> 1) - 1);
+                    signedInputData[dstIndex + 2] = static_cast<int8_t>((((uint16_t)inferenceFrame[srcIndex + 2] + 1U) >> 1) - 1);
                     srcIndex += IMAGE_CHANNELS;
                 }
             }
@@ -782,10 +789,10 @@ static void vInferenceTask(void *pvParameters)
 
                 for (int x = 0; x < IMAGE_WIDTH; ++x)
                 {
-                    int idx = rowBase + x;
-                    signedInputData[idx] = g_quantLUT[inferenceFrame[srcIndex + 0]];
-                    signedInputData[planeSize + idx] = g_quantLUT[inferenceFrame[srcIndex + 1]];
-                    signedInputData[2 * planeSize + idx] = g_quantLUT[inferenceFrame[srcIndex + 2]];
+                    int dstIndex = (rowBase + x) * IMAGE_CHANNELS;
+                    signedInputData[dstIndex + 0] = g_quantLUT[inferenceFrame[srcIndex + 0]];
+                    signedInputData[dstIndex + 1] = g_quantLUT[inferenceFrame[srcIndex + 1]];
+                    signedInputData[dstIndex + 2] = g_quantLUT[inferenceFrame[srcIndex + 2]];
                     srcIndex += IMAGE_CHANNELS;
                 }
             }
@@ -846,9 +853,12 @@ static void vInferenceTask(void *pvParameters)
         uint64_t t_start_render = pmu_get_systick_Count();
 #if USE_CCAP_CAMERA
         // 5a. Draw YOLOv8n bounding boxes directly on the fast QVGA SRAM image first
+        size_t personCount = 0;
         for (size_t i = 0; i < detectionCount; ++i)
         {
             const arm::app::model::Detection& det = detections[i];
+            if (det.cls != 0) continue; // Keep only class 0 (person)
+            personCount++;
             
             // Map back to CCAP coordinate space (undoing 24px letterbox pad)
             float x_scaled = det.x;
@@ -878,7 +888,7 @@ static void vInferenceTask(void *pvParameters)
             }
         }
 
-        DrawStatusOverlay(&ccapSrcImg, currentFPS, detectionCount);
+        DrawStatusOverlay(&ccapSrcImg, currentFPS, personCount);
 
         // 5b. Direct copy of the SRAM image (with overlays) to HyperRAM
         memcpy(dstImg.data, inferenceFrame, CCAP_FB_SIZE);
@@ -890,9 +900,13 @@ static void vInferenceTask(void *pvParameters)
                                     LCD_DISPLAY_HEIGHT);
 
         // Draw bounding boxes for detected people
+        size_t personCount = 0;
         for (size_t i = 0; i < detectionCount; ++i)
         {
             const arm::app::model::Detection& det = detections[i];
+            if (det.cls != 0) continue; // Keep only class 0 (person)
+            personCount++;
+
             int x_disp = static_cast<int>((det.x * RENDER_WIDTH) / IMAGE_WIDTH);
             int y_disp = static_cast<int>((det.y * RENDER_HEIGHT) / IMAGE_HEIGHT);
             int w_disp = static_cast<int>((det.w * RENDER_WIDTH) / IMAGE_WIDTH);
@@ -916,7 +930,7 @@ static void vInferenceTask(void *pvParameters)
             }
         }
 
-        DrawStatusOverlay(&dstImg, currentFPS, detectionCount);
+        DrawStatusOverlay(&dstImg, currentFPS, personCount);
 #endif /* USE_CCAP_CAMERA */
         uint64_t t_end_render = pmu_get_systick_Count();
         sumRenderPrep += (t_end_render - t_start_render);
