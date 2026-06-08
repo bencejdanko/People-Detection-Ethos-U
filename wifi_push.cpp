@@ -1,3 +1,5 @@
+#define register
+
 #include "wifi_push.hpp"
 #include "NuMicro.h"
 #include "FreeRTOS.h"
@@ -36,7 +38,8 @@ namespace WifiPush {
     }
 
     static void UART_ResetFIFO(void) {
-        WIFI_UART->FIFOSTS |= (UART_FIFOSTS_RXRST_Msk | UART_FIFOSTS_TXRST_Msk);
+        UART_RESET_RXFIFO(WIFI_UART);
+        UART_RESET_TXFIFO(WIFI_UART);
     }
 
     static void Wifi_UART_Init(void) {
