@@ -26,15 +26,15 @@ namespace model
 #define YOLOV8N_OD_STRIDE_32   (32)
 
 // Vela compiled output tensor indices
-#define YOLOV8N_OD_STRIDE8_CONFIDENCE_TENSOR_INDEX   (2)     // [1, 576, 80]
-#define YOLOV8N_OD_STRIDE16_CONFIDENCE_TENSOR_INDEX  (4)     // [1, 144, 80]
-#define YOLOV8N_OD_STRIDE32_CONFIDENCE_TENSOR_INDEX  (3)     // [1, 36, 80]
+#define YOLOV8N_OD_STRIDE8_CONFIDENCE_TENSOR_INDEX   (5)     // [1, 576, 1]
+#define YOLOV8N_OD_STRIDE16_CONFIDENCE_TENSOR_INDEX  (3)     // [1, 144, 1]
+#define YOLOV8N_OD_STRIDE32_CONFIDENCE_TENSOR_INDEX  (1)     // [1, 36, 1]
 
 #define YOLOV8N_OD_STRIDE8_BOX_TENSOR_INDEX          (0)     // [1, 576, 64]
-#define YOLOV8N_OD_STRIDE16_BOX_TENSOR_INDEX         (1)     // [1, 144, 64]
-#define YOLOV8N_OD_STRIDE32_BOX_TENSOR_INDEX         (5)     // [1, 36, 64]
+#define YOLOV8N_OD_STRIDE16_BOX_TENSOR_INDEX         (2)     // [1, 144, 64]
+#define YOLOV8N_OD_STRIDE32_BOX_TENSOR_INDEX         (4)     // [1, 36, 64]
 
-#define YOLOV8N_OD_CLASS       (80)     // COCO 80 classes
+#define YOLOV8N_OD_CLASS       (1)     // Person-only class
 
 struct Detection
 {

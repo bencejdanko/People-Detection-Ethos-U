@@ -4,17 +4,13 @@ Uses YOLOv8n to conduct people counting, and pushes results to an HTTP server ov
 
 <img width="620" height="311" alt="image" src="https://github.com/user-attachments/assets/ebb78be8-2804-4c2b-ab90-8e01cee6e337" />
 
-YOLOv8n runs 21FPS at 640x480 centered. Sends people counts to dashboard over Wi-Fi connection.
+YOLOv8n, with Relu6 activations and INT8 quantization with 192x192 normalized image input. 25FPS at 640x480 centered rendered to the LCD screen. Sends people counts to dashboard over Wi-Fi connection.
 
 ## Usage
 
-Install necessary libraries:
-
-```bash
-git clone https://github.com/OpenNuvoton/M55M1BSP
-```
-
 Load `MODEL.TFL` into the root of the SD card.
+
+Flash with Keil.
 
 Start the web server:
 
