@@ -340,7 +340,7 @@
               <MiscControls></MiscControls>
               <Define>NVT_VECTOR_ON_FLASH, TF_LITE_STATIC_MEMORY, ARM_MATH_DSP, ARM_NPU, ACTIVATION_BUF_SZ=0x000B0000</Define>
               <Undefine></Undefine>
-              <IncludePath>M55M1BSP\Library\CMSIS\Core\Include;M55M1BSP\Library\Device\Nuvoton\M55M1\Include;M55M1BSP\Library\CMSIS\DSP\Include;M55M1BSP\Library\StdDriver\inc;M55M1BSP\Library\StdDriver\inc\npu;M55M1BSP\ThirdParty\openmv\omv\imlib;M55M1BSP\ThirdParty\openmv\omv\alloc;M55M1BSP\ThirdParty\openmv\omv\common;M55M1BSP\ThirdParty\openmv\omv\Lib;M55M1BSP\ThirdParty\tflite_micro;M55M1BSP\ThirdParty\tflite_micro\_deps\tensorflow-flatbuffers-src\include;M55M1BSP\ThirdParty\ml-embedded-evaluation-kit\source\application\api\common\include;M55M1BSP\ThirdParty\ml-embedded-evaluation-kit\source\log\include;M55M1BSP\ThirdParty\ml-embedded-evaluation-kit\source\math\include;M55M1BSP\ThirdParty\ml-embedded-evaluation-kit\source\application\main\include;M55M1BSP\ThirdParty\ml-embedded-evaluation-kit\source\profiler\include;Device\include;model;NPU\include;Pattern\include;ProfilerCounter\include;.;M55M1BSP\ThirdParty\tflite_micro\_deps\tensorflow-gemlowp-src;M55M1BSP\ThirdParty\FatFs\source;M55M1BSP\ThirdParty\FreeRTOS\Source\include;M55M1BSP\ThirdParty\FreeRTOS\Source\portable\GCC\ARM_CM55_NTZ\non_secure;M55M1BSP\ThirdParty\lwIP\src\include;M55M1BSP\ThirdParty\lwIP\src\include\compat;M55M1BSP\Library\StdDriver\inc\emac;Device\lwip_port\include;Device\lwip_port\drv_emac;Device\lwip_port\netif</IncludePath>
+              <IncludePath>M55M1BSP\Library\CMSIS\Core\Include;M55M1BSP\Library\Device\Nuvoton\M55M1\Include;M55M1BSP\Library\CMSIS\DSP\Include;M55M1BSP\Library\StdDriver\inc;M55M1BSP\Library\StdDriver\inc\npu;M55M1BSP\ThirdParty\openmv\omv\imlib;M55M1BSP\ThirdParty\openmv\omv\alloc;M55M1BSP\ThirdParty\openmv\omv\common;M55M1BSP\ThirdParty\openmv\omv\Lib;M55M1BSP\ThirdParty\tflite_micro;M55M1BSP\ThirdParty\tflite_micro\_deps\tensorflow-flatbuffers-src\include;M55M1BSP\ThirdParty\ml-embedded-evaluation-kit\source\application\api\common\include;M55M1BSP\ThirdParty\ml-embedded-evaluation-kit\source\log\include;M55M1BSP\ThirdParty\ml-embedded-evaluation-kit\source\math\include;M55M1BSP\ThirdParty\ml-embedded-evaluation-kit\source\application\main\include;M55M1BSP\ThirdParty\ml-embedded-evaluation-kit\source\profiler\include;Device\include;model;NPU\include;ProfilerCounter\include;.;M55M1BSP\ThirdParty\tflite_micro\_deps\tensorflow-gemlowp-src;M55M1BSP\ThirdParty\FatFs\source;M55M1BSP\ThirdParty\FreeRTOS\Source\include;M55M1BSP\ThirdParty\FreeRTOS\Source\portable\GCC\ARM_CM55_NTZ\non_secure</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -474,21 +474,7 @@
               <FileType>1</FileType>
               <FilePath>M55M1BSP\Library\StdDriver\src\pdma.c</FilePath>
             </File>
-            <File>
-              <FileName>..\M55M1BSP\Library\StdDriver\src\emac\synopGMAC_Dev.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>M55M1BSP\Library\StdDriver\src\emac\synopGMAC_Dev.c</FilePath>
-            </File>
-            <File>
-              <FileName>..\M55M1BSP\Library\StdDriver\src\emac\synopGMAC_network_interface.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>M55M1BSP\Library\StdDriver\src\emac\synopGMAC_network_interface.c</FilePath>
-            </File>
-            <File>
-              <FileName>..\M55M1BSP\Library\StdDriver\src\emac\synopGMAC_plat.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>M55M1BSP\Library\StdDriver\src\emac\synopGMAC_plat.c</FilePath>
-            </File>
+
           </Files>
         </Group>
         <Group>
@@ -706,26 +692,7 @@
             </File>
           </Files>
         </Group>
-        <Group>
-          <GroupName>Pattern</GroupName>
-          <Files>
-            <File>
-              <FileName>..\Pattern\car.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>Pattern\car.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>..\Pattern\dinner.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>Pattern\dinner.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>..\Pattern\InputFiles.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>Pattern\InputFiles.cpp</FilePath>
-            </File>
-          </Files>
-        </Group>
+
         <Group>
           <GroupName>FreeRTOS</GroupName>
           <Files>
@@ -771,211 +738,7 @@
             </File>
           </Files>
         </Group>
-        <Group>
-          <GroupName>LwIP</GroupName>
-          <Files>
-            <File>
-              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\core\init.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>M55M1BSP\ThirdParty\lwIP\src\core\init.c</FilePath>
-            </File>
-            <File>
-              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\core\def.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>M55M1BSP\ThirdParty\lwIP\src\core\def.c</FilePath>
-            </File>
-            <File>
-              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\core\dns.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>M55M1BSP\ThirdParty\lwIP\src\core\dns.c</FilePath>
-            </File>
-            <File>
-              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\core\inet_chksum.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>M55M1BSP\ThirdParty\lwIP\src\core\inet_chksum.c</FilePath>
-            </File>
-            <File>
-              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\core\ip.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>M55M1BSP\ThirdParty\lwIP\src\core\ip.c</FilePath>
-            </File>
-            <File>
-              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\core\mem.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>M55M1BSP\ThirdParty\lwIP\src\core\mem.c</FilePath>
-            </File>
-            <File>
-              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\core\memp.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>M55M1BSP\ThirdParty\lwIP\src\core\memp.c</FilePath>
-            </File>
-            <File>
-              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\core\netif.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>M55M1BSP\ThirdParty\lwIP\src\core\netif.c</FilePath>
-            </File>
-            <File>
-              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\core\pbuf.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>M55M1BSP\ThirdParty\lwIP\src\core\pbuf.c</FilePath>
-            </File>
-            <File>
-              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\core\raw.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>M55M1BSP\ThirdParty\lwIP\src\core\raw.c</FilePath>
-            </File>
-            <File>
-              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\core\stats.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>M55M1BSP\ThirdParty\lwIP\src\core\stats.c</FilePath>
-            </File>
-            <File>
-              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\core\sys_lwip.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>M55M1BSP\ThirdParty\lwIP\src\core\sys_lwip.c</FilePath>
-            </File>
-            <File>
-              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\core\tcp.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>M55M1BSP\ThirdParty\lwIP\src\core\tcp.c</FilePath>
-            </File>
-            <File>
-              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\core\tcp_in.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>M55M1BSP\ThirdParty\lwIP\src\core\tcp_in.c</FilePath>
-            </File>
-            <File>
-              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\core\tcp_out.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>M55M1BSP\ThirdParty\lwIP\src\core\tcp_out.c</FilePath>
-            </File>
-            <File>
-              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\core\timeouts.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>M55M1BSP\ThirdParty\lwIP\src\core\timeouts.c</FilePath>
-            </File>
-            <File>
-              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\core\udp.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>M55M1BSP\ThirdParty\lwIP\src\core\udp.c</FilePath>
-            </File>
-            <File>
-              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\core\ipv4\autoip.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>M55M1BSP\ThirdParty\lwIP\src\core\ipv4\autoip.c</FilePath>
-            </File>
-            <File>
-              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\core\ipv4\dhcp.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>M55M1BSP\ThirdParty\lwIP\src\core\ipv4\dhcp.c</FilePath>
-            </File>
-            <File>
-              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\core\ipv4\etharp.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>M55M1BSP\ThirdParty\lwIP\src\core\ipv4\etharp.c</FilePath>
-            </File>
-            <File>
-              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\core\ipv4\icmp.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>M55M1BSP\ThirdParty\lwIP\src\core\ipv4\icmp.c</FilePath>
-            </File>
-            <File>
-              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\core\ipv4\igmp.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>M55M1BSP\ThirdParty\lwIP\src\core\ipv4\igmp.c</FilePath>
-            </File>
-            <File>
-              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\core\ipv4\ip4.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>M55M1BSP\ThirdParty\lwIP\src\core\ipv4\ip4.c</FilePath>
-            </File>
-            <File>
-              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\core\ipv4\ip4_addr.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>M55M1BSP\ThirdParty\lwIP\src\core\ipv4\ip4_addr.c</FilePath>
-            </File>
-            <File>
-              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\core\ipv4\ip4_frag.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>M55M1BSP\ThirdParty\lwIP\src\core\ipv4\ip4_frag.c</FilePath>
-            </File>
-            <File>
-              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\api\api_lib.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>M55M1BSP\ThirdParty\lwIP\src\api\api_lib.c</FilePath>
-            </File>
-            <File>
-              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\api\api_msg.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>M55M1BSP\ThirdParty\lwIP\src\api\api_msg.c</FilePath>
-            </File>
-            <File>
-              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\api\err.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>M55M1BSP\ThirdParty\lwIP\src\api\err.c</FilePath>
-            </File>
-            <File>
-              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\api\if_api.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>M55M1BSP\ThirdParty\lwIP\src\api\if_api.c</FilePath>
-            </File>
-            <File>
-              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\api\netbuf.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>M55M1BSP\ThirdParty\lwIP\src\api\netbuf.c</FilePath>
-            </File>
-            <File>
-              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\api\netdb.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>M55M1BSP\ThirdParty\lwIP\src\api\netdb.c</FilePath>
-            </File>
-            <File>
-              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\api\netifapi.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>M55M1BSP\ThirdParty\lwIP\src\api\netifapi.c</FilePath>
-            </File>
-            <File>
-              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\api\sockets.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>M55M1BSP\ThirdParty\lwIP\src\api\sockets.c</FilePath>
-            </File>
-            <File>
-              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\api\tcpip.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>M55M1BSP\ThirdParty\lwIP\src\api\tcpip.c</FilePath>
-            </File>
-            <File>
-              <FileName>..\M55M1BSP\ThirdParty\lwIP\src\netif\ethernet.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>M55M1BSP\ThirdParty\lwIP\src\netif\ethernet.c</FilePath>
-            </File>
-            <File>
-              <FileName>..\Device\lwip_port\sys_arch.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>Device\lwip_port\sys_arch.c</FilePath>
-            </File>
-            <File>
-              <FileName>..\Device\lwip_port\netif\ethernetif.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>Device\lwip_port\netif\ethernetif.c</FilePath>
-            </File>
-            <File>
-              <FileName>..\Device\lwip_port\drv_emac\emac.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>Device\lwip_port\drv_emac\emac.c</FilePath>
-            </File>
-            <File>
-              <FileName>..\Device\lwip_port\drv_emac\mii.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>Device\lwip_port\drv_emac\mii.c</FilePath>
-            </File>
-            <File>
-              <FileName>..\Device\lwip_port\time_stamp.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>Device\lwip_port\time_stamp.c</FilePath>
-            </File>
-          </Files>
-        </Group>
+
       </Groups>
     </Target>
   </Targets>

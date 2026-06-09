@@ -33,27 +33,7 @@ static void SDCard_PinConfig(void)
     GPIO_SetPullCtl(PD, BIT13, GPIO_PUSEL_PULL_UP);
 }
 
-static void Ethernet_PinConfig(void)
-{
-    /* Set multi-function pins for EMAC0 RMII */
-    SET_EMAC0_RMII_MDC_PE8();
-    SET_EMAC0_RMII_MDIO_PE9();
-    SET_EMAC0_RMII_TXD0_PE10();
-    SET_EMAC0_RMII_TXD1_PE11();
-    SET_EMAC0_RMII_TXEN_PE12();
-    SET_EMAC0_RMII_REFCLK_PC8();
-    SET_EMAC0_RMII_RXD0_PC7();
-    SET_EMAC0_RMII_RXD1_PC6();
-    SET_EMAC0_RMII_CRSDV_PA7();
-    SET_EMAC0_RMII_RXERR_PA6();
 
-    /* Fast slew control on PE.10, PE.11, PE.12 for Ethernet RMII */
-    GPIO_SetSlewCtl(PE, (BIT10 | BIT11 | BIT12), GPIO_SLEWCTL_FAST0);
-
-    /* PE.13 Set high to enable Ethernet PHY */
-    GPIO_SetMode(PE, BIT13, GPIO_MODE_OUTPUT);
-    PE13 = 1;
-}
 
 static void SYS_Init(void)
 {
@@ -109,9 +89,7 @@ static void SYS_Init(void)
     CLK_EnableModuleClock(SDH0_MODULE);
     CLK_SetModuleClock(SDH0_MODULE, CLK_SDHSEL_SDH0SEL_HCLK0, CLK_SDHDIV_SDH0DIV(4));
 
-    /* Enable Ethernet MAC (EMAC0) module clock */
-    CLK_EnableModuleClock(EMAC0_MODULE);
-    SYS_ResetModule(SYS_EMAC0RST);
+
 
     /* Select UART module clock source and clock divider */
     SetDebugUartCLK();
@@ -129,8 +107,7 @@ static void SYS_Init(void)
     /* Set up SD Card pins */
     SDCard_PinConfig();
 
-    /* Set up Ethernet MAC RMII pins */
-    Ethernet_PinConfig();
+
 }
 
 int BoardInit(void)

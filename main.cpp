@@ -16,18 +16,7 @@
 #include "task.h"
 #include "semphr.h"
 
-/* LwIP network includes (UDP server path only) */
-#if !USE_CCAP_CAMERA
-extern "C" {
-#include "lwip/tcpip.h"
-#include "netif/ethernetif.h"
-#include "lwip/dhcp.h"
-#include "lwip/udp.h"
-#include "lwip/pbuf.h"
-#include "lwip/def.h"
-#include "emac.h"
-}
-#endif /* !USE_CCAP_CAMERA */
+
 
 /* Board and BSP includes */
 #include "NuMicro.h"
@@ -71,17 +60,6 @@ extern "C" {
 /* Task Handles */
 static TaskHandle_t xInferenceTaskHandle = NULL;
 
-#if !USE_CCAP_CAMERA
-/* Network interface structure (UDP path only) */
-struct netif g_netif;
-static char g_deviceIpAddress[IPADDR_STRLEN_MAX] = "0.0.0.0";
-
-/* --- UDP FRAME BUFFER MEMORY ALLOCATION --- */
-__attribute__((section(".bss.hyperram.data"), aligned(32))) static uint8_t g_udpFrameBuffers[3][FRAME_BUFFER_SIZE];
-static volatile int32_t g_rxFrameBufferIndex = 0;
-static volatile int32_t g_publishedFrameBufferIndex = -1;
-static volatile int32_t g_processingFrameBufferIndex = -1;
-#else
 /* --- CCAP FRAME BUFFER MEMORY ALLOCATION ---
  * Two QVGA (320x240) RGB565 ping-pong buffers so that CCAP DMA into one
  * buffer can overlap with NPU inference on the other. */
@@ -90,7 +68,6 @@ static volatile int32_t g_processingFrameBufferIndex = -1;
 #define CCAP_FB_SIZE         (CCAP_CAPTURE_WIDTH * CCAP_CAPTURE_HEIGHT * 2)  // RGB565
 __attribute__((section(".bss.vram.data"), aligned(32))) static uint8_t g_ccapBuf0[CCAP_FB_SIZE];
 __attribute__((section(".bss.vram.data"), aligned(32))) static uint8_t g_ccapBuf1[CCAP_FB_SIZE];
-#endif /* !USE_CCAP_CAMERA */
 
 /* Tensor arena buffer for TensorFlow Lite Micro placed in SRAM01_HYPERRAM */
 namespace arm {
@@ -116,13 +93,8 @@ static char *g_lcdShowBuf = frame_buf2;
 static volatile bool g_lcdBlitPending = false;
 static TaskHandle_t xDisplayTaskHandle = NULL;
 
-#if USE_CCAP_CAMERA
-    #define RENDER_WIDTH   CCAP_CAPTURE_WIDTH
-    #define RENDER_HEIGHT  CCAP_CAPTURE_HEIGHT
-#else
-    #define RENDER_WIDTH   LCD_DISPLAY_WIDTH
-    #define RENDER_HEIGHT  LCD_DISPLAY_HEIGHT
-#endif
+#define RENDER_WIDTH   CCAP_CAPTURE_WIDTH
+#define RENDER_HEIGHT  CCAP_CAPTURE_HEIGHT
 #define RENDER_FB_SIZE (RENDER_WIDTH * RENDER_HEIGHT * 2)
 
 static int8_t g_quantLUT[256];
@@ -140,35 +112,13 @@ static inline uint16_t Rgb888ToRgb565(const uint8_t *pixel)
                       ((uint16_t)pixel[2] >> 3));
 }
 
-static uint16_t s_displayXMap[LCD_DISPLAY_WIDTH];
-static uint16_t s_displayYMap[LCD_DISPLAY_HEIGHT];
+
 
 #if defined(__EBI_LCD_PANEL__)
 static const int kStatusTextScale = 4;
 static const int kStatusTextMargin = 16;
 static const int kStatusTextLineHeight = FONT_HTIGHT * kStatusTextScale + 8;
 static const int kStatusTextColor = COLOR_R5_G6_B5_TO_RGB565(31, 63, 31);
-
-#if !USE_CCAP_CAMERA
-static void CopyDeviceIpAddress(char *dst, size_t dstSize)
-{
-    if (dstSize == 0)
-    {
-        return;
-    }
-
-    if (xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED)
-    {
-        taskENTER_CRITICAL();
-    }
-    strncpy(dst, g_deviceIpAddress, dstSize - 1);
-    dst[dstSize - 1] = '\0';
-    if (xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED)
-    {
-        taskEXIT_CRITICAL();
-    }
-}
-#endif /* !USE_CCAP_CAMERA */
 
 static void DrawStatusOverlay(image_t *img, uint64_t fps, size_t peopleCount)
 {
@@ -180,13 +130,7 @@ static void DrawStatusOverlay(image_t *img, uint64_t fps, size_t peopleCount)
 
     sprintf(lines[0], "FPS: %llu", fps);
     sprintf(lines[1], "PEOPLE: %d", (int)peopleCount);
-#if USE_CCAP_CAMERA
     sprintf(lines[2], "SRC: CCAP Camera");
-#else
-    char ipAddress[IPADDR_STRLEN_MAX];
-    CopyDeviceIpAddress(ipAddress, sizeof(ipAddress));
-    sprintf(lines[2], "IP: %s", ipAddress);
-#endif
 
     bool wifiConnected = WifiPush::IsConnected();
     sprintf(lines[3], "WIFI: %s", wifiConnected ? "Connected" : "Disconnected");
@@ -214,60 +158,20 @@ static void DrawStatusScreen(uint64_t fps, size_t peopleCount)
 
     DrawStatusOverlay(&statusImg, fps, peopleCount);
 
-#if USE_CCAP_CAMERA
     statusRect.u32TopLeftX = (LCD_DISPLAY_WIDTH - CCAP_CAPTURE_WIDTH * 2) / 2;     // 80
     statusRect.u32TopLeftY = (LCD_DISPLAY_HEIGHT - CCAP_CAPTURE_HEIGHT * 2) / 2;   // 0
     statusRect.u32BottonRightX = (LCD_DISPLAY_WIDTH - CCAP_CAPTURE_WIDTH * 2) / 2 + CCAP_CAPTURE_WIDTH * 2 - 1; // 719
     statusRect.u32BottonRightY = (LCD_DISPLAY_HEIGHT - CCAP_CAPTURE_HEIGHT * 2) / 2 + CCAP_CAPTURE_HEIGHT * 2 - 1; // 479
-#else
-    statusRect.u32TopLeftX = 0;
-    statusRect.u32TopLeftY = 0;
-    statusRect.u32BottonRightX = RENDER_WIDTH - 1;
-    statusRect.u32BottonRightY = RENDER_HEIGHT - 1;
-#endif
 
     // Clear the physical LCD screen to black first
     Display_ClearLCD(C_BLACK);
 
     // Draw the active window region
-#if USE_CCAP_CAMERA
     Display_FillRect((uint16_t *)statusImg.data, &statusRect, 2);
-#else
-    Display_FillRect((uint16_t *)statusImg.data, &statusRect, 1);
-#endif
 }
 #endif
 
-static void ConvertRgb888ToRgb565Scaled(const uint8_t *src, uint16_t *dst, uint32_t dstWidth, uint32_t dstHeight)
-{
-    static bool mapsInitialized = false;
 
-    if (!mapsInitialized)
-    {
-        for (uint32_t x = 0; x < dstWidth; ++x)
-        {
-            s_displayXMap[x] = (uint16_t)((x * IMAGE_WIDTH) / dstWidth);
-        }
-
-        for (uint32_t y = 0; y < dstHeight; ++y)
-        {
-            s_displayYMap[y] = (uint16_t)((y * IMAGE_HEIGHT) / dstHeight);
-        }
-
-        mapsInitialized = true;
-    }
-
-    for (uint32_t y = 0; y < dstHeight; ++y)
-    {
-        const uint8_t *srcRow = src + (s_displayYMap[y] * IMAGE_WIDTH * IMAGE_CHANNELS);
-        uint16_t *dstRow = dst + (y * dstWidth);
-
-        for (uint32_t x = 0; x < dstWidth; ++x)
-        {
-            dstRow[x] = Rgb888ToRgb565(srcRow + (s_displayXMap[x] * IMAGE_CHANNELS));
-        }
-    }
-}
 
 /* Initialize OpenMV (imlib) frame buffer */
 static void omv_init()
@@ -288,134 +192,7 @@ static void omv_init()
     framebuffer_init_from_image(&frameBuffer);
 }
 
-#if !USE_CCAP_CAMERA
-/* UDP Frame Protocol Structure */
-struct PacketHeader {
-    uint32_t magic;         // Magic Header (0x46524D45 -> "FRME")
-    uint32_t frame_id;      // Sequential Frame ID
-    uint32_t total_len;     // Expected total size of raw pixels
-    uint32_t chunk_offset;  // Offset of this chunk in the frame buffer
-    uint32_t chunk_len;     // Length of this chunk payload
-};
 
-static struct udp_pcb *s_udpVideoPcb = NULL;
-static uint32_t s_udpActiveFrameId = 0xFFFFFFFF;
-static uint32_t s_udpAccumulatedBytes = 0;
-static bool s_udpActiveFramePublished = false;
-
-static int32_t SelectNextRxFrameBuffer(void)
-{
-    for (int32_t i = 0; i < 3; ++i)
-    {
-        if ((i != g_publishedFrameBufferIndex) && (i != g_processingFrameBufferIndex))
-        {
-            return i;
-        }
-    }
-
-    return g_rxFrameBufferIndex;
-}
-
-static void PublishReceivedFrame(void)
-{
-    taskENTER_CRITICAL();
-    g_publishedFrameBufferIndex = g_rxFrameBufferIndex;
-    s_udpActiveFramePublished = true;
-    g_rxFrameBufferIndex = SelectNextRxFrameBuffer();
-    taskEXIT_CRITICAL();
-
-    if (xInferenceTaskHandle != NULL)
-    {
-        xTaskNotifyGive(xInferenceTaskHandle);
-    }
-}
-
-static void UdpVideoReceiveCallback(void *arg,
-                                    struct udp_pcb *pcb,
-                                    struct pbuf *p,
-                                    const ip_addr_t *addr,
-                                    u16_t port)
-{
-    (void)arg;
-    (void)pcb;
-    (void)addr;
-    (void)port;
-
-    if (p == NULL)
-    {
-        return;
-    }
-
-    if (p->tot_len >= sizeof(PacketHeader))
-    {
-        PacketHeader header;
-        if (pbuf_copy_partial(p, &header, sizeof(header), 0) == sizeof(header))
-        {
-            uint32_t magic = ntohl(header.magic);
-            uint32_t frameId = ntohl(header.frame_id);
-            uint32_t totalLen = ntohl(header.total_len);
-            uint32_t chunkOffset = ntohl(header.chunk_offset);
-            uint32_t chunkLen = ntohl(header.chunk_len);
-
-            if ((magic == UDP_MAGIC_HEADER) &&
-                (totalLen == FRAME_BUFFER_SIZE) &&
-                ((chunkOffset + chunkLen) <= FRAME_BUFFER_SIZE) &&
-                (p->tot_len >= (sizeof(PacketHeader) + chunkLen)))
-            {
-                if (chunkOffset == 0)
-                {
-                    s_udpActiveFrameId = frameId;
-                    s_udpAccumulatedBytes = 0;
-                    s_udpActiveFramePublished = false;
-                }
-
-                if ((frameId == s_udpActiveFrameId) && !s_udpActiveFramePublished)
-                {
-                    uint8_t *rxFrame = g_udpFrameBuffers[g_rxFrameBufferIndex];
-                    if (pbuf_copy_partial(p,
-                                          rxFrame + chunkOffset,
-                                          (u16_t)chunkLen,
-                                          sizeof(PacketHeader)) == chunkLen)
-                    {
-                        s_udpAccumulatedBytes += chunkLen;
-
-                        if (s_udpAccumulatedBytes == FRAME_BUFFER_SIZE)
-                        {
-                            PublishReceivedFrame();
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    pbuf_free(p);
-}
-
-static void UdpVideoInitCallback(void *arg)
-{
-    (void)arg;
-
-    s_udpVideoPcb = udp_new();
-    if (s_udpVideoPcb == NULL)
-    {
-        LOG_ERROR("Failed to create raw UDP PCB.");
-        return;
-    }
-
-    err_t err = udp_bind(s_udpVideoPcb, IP_ADDR_ANY, UDP_STREAM_PORT);
-    if (err != ERR_OK)
-    {
-        LOG_ERROR("Failed to bind raw UDP PCB to port %d: lwIP err=%d", UDP_STREAM_PORT, (int)err);
-        udp_remove(s_udpVideoPcb);
-        s_udpVideoPcb = NULL;
-        return;
-    }
-
-    udp_recv(s_udpVideoPcb, UdpVideoReceiveCallback, NULL);
-    LOG_INFO("Raw UDP video receiver listening on port %d.", UDP_STREAM_PORT);
-}
-#endif /* !USE_CCAP_CAMERA */
 
 static bool ModelContainsEthosUCustomOp(const unsigned char *modelData, size_t modelSize)
 {
@@ -662,7 +439,6 @@ static void vInferenceTask(void *pvParameters)
 
     LOG_INFO("Inference Engine initialized. Stack high water mark: %u words remaining.", (unsigned int)uxTaskGetStackHighWaterMark(NULL));
 
-#if USE_CCAP_CAMERA
     /* --- CCAP camera path: initialise sensor then capture in a tight loop --- */
     LOG_INFO("Initializing CCAP onboard camera (HM1055)...");
     if (ImageSensor_Init() != 0)
@@ -740,72 +516,13 @@ static void vInferenceTask(void *pvParameters)
 
         /* inferenceFrame pointer used by the LCD display path below */
         const uint8_t *inferenceFrame = readyBuf;  // RGB565 QVGA
-#else
-    LOG_INFO("Waiting for incoming network video feed...");
 
-    while (1)
-    {
-        // Wait for the raw UDP callback to publish a complete frame.
-        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-        taskENTER_CRITICAL();
-        int32_t frameBufferIndex = g_publishedFrameBufferIndex;
-        g_processingFrameBufferIndex = frameBufferIndex;
-        taskEXIT_CRITICAL();
-
-        if (frameBufferIndex < 0)
-        {
-            continue;
-        }
-
-        const uint8_t *inferenceFrame = g_udpFrameBuffers[frameBufferIndex];
-#endif /* USE_CCAP_CAMERA */
 
 #if defined(__EBI_LCD_PANEL__)
         dstImg.data = (uint8_t *)g_lcdDrawBuf;
 #endif
 
-#if !USE_CCAP_CAMERA
-        // 1. Quantize the raw RGB pixels into the model input tensor (int8)
-        uint64_t t_start_inproc = pmu_get_systick_Count();
-        int8_t *signedInputData = inputTensor->data.int8;
 
-        if (useFastInputQuant)
-        {
-            for (int y = 0; y < IMAGE_HEIGHT; ++y)
-            {
-                int rowBase = y * IMAGE_WIDTH;
-                int srcIndex = rowBase * IMAGE_CHANNELS;
-
-                for (int x = 0; x < IMAGE_WIDTH; ++x)
-                {
-                    int dstIndex = (rowBase + x) * IMAGE_CHANNELS;
-                    signedInputData[dstIndex + 0] = static_cast<int8_t>((((uint16_t)inferenceFrame[srcIndex + 0] + 1U) >> 1) - 1);
-                    signedInputData[dstIndex + 1] = static_cast<int8_t>((((uint16_t)inferenceFrame[srcIndex + 1] + 1U) >> 1) - 1);
-                    signedInputData[dstIndex + 2] = static_cast<int8_t>((((uint16_t)inferenceFrame[srcIndex + 2] + 1U) >> 1) - 1);
-                    srcIndex += IMAGE_CHANNELS;
-                }
-            }
-        }
-        else
-        {
-            for (int y = 0; y < IMAGE_HEIGHT; ++y)
-            {
-                int rowBase = y * IMAGE_WIDTH;
-                int srcIndex = rowBase * IMAGE_CHANNELS;
-
-                for (int x = 0; x < IMAGE_WIDTH; ++x)
-                {
-                    int dstIndex = (rowBase + x) * IMAGE_CHANNELS;
-                    signedInputData[dstIndex + 0] = g_quantLUT[inferenceFrame[srcIndex + 0]];
-                    signedInputData[dstIndex + 1] = g_quantLUT[inferenceFrame[srcIndex + 1]];
-                    signedInputData[dstIndex + 2] = g_quantLUT[inferenceFrame[srcIndex + 2]];
-                    srcIndex += IMAGE_CHANNELS;
-                }
-            }
-        }
-        uint64_t t_end_inproc = pmu_get_systick_Count();
-        sumInputProc += (t_end_inproc - t_start_inproc);
-#endif /* !USE_CCAP_CAMERA */
 
         // 2. Execute Ethos-U Accelerated Inference
         uint64_t t_start_inf = pmu_get_systick_Count();
@@ -868,7 +585,6 @@ static void vInferenceTask(void *pvParameters)
         // 5. Visual Rendering on LCD Panel (if enabled)
 #if defined(__EBI_LCD_PANEL__)
         uint64_t t_start_render = pmu_get_systick_Count();
-#if USE_CCAP_CAMERA
         // 5a. Draw YOLOv8n bounding boxes directly on the fast QVGA SRAM image first
         size_t personCount = 0;
         for (size_t i = 0; i < detectionCount; ++i)
@@ -909,46 +625,6 @@ static void vInferenceTask(void *pvParameters)
 
         // 5b. Direct copy of the SRAM image (with overlays) to HyperRAM
         memcpy(dstImg.data, inferenceFrame, CCAP_FB_SIZE);
-#else
-        // UDP path: inferenceFrame is RGB888 192×192 — scale and convert to RGB565.
-        ConvertRgb888ToRgb565Scaled(inferenceFrame,
-                                    (uint16_t *)dstImg.data,
-                                    LCD_DISPLAY_WIDTH,
-                                    LCD_DISPLAY_HEIGHT);
-
-        // Draw bounding boxes for detected people
-        size_t personCount = 0;
-        for (size_t i = 0; i < detectionCount; ++i)
-        {
-            const arm::app::model::Detection& det = detections[i];
-            if (det.cls != 0) continue; // Keep only class 0 (person)
-            personCount++;
-
-            int x_disp = static_cast<int>((det.x * RENDER_WIDTH) / IMAGE_WIDTH);
-            int y_disp = static_cast<int>((det.y * RENDER_HEIGHT) / IMAGE_HEIGHT);
-            int w_disp = static_cast<int>((det.w * RENDER_WIDTH) / IMAGE_WIDTH);
-            int h_disp = static_cast<int>((det.h * RENDER_HEIGHT) / IMAGE_HEIGHT);
-
-            if (x_disp < 0) { w_disp += x_disp; x_disp = 0; }
-            if (y_disp < 0) { h_disp += y_disp; y_disp = 0; }
-            if (x_disp + w_disp > RENDER_WIDTH) { w_disp = RENDER_WIDTH - x_disp; }
-            if (y_disp + h_disp > RENDER_HEIGHT) { h_disp = RENDER_HEIGHT - y_disp; }
-
-            if (w_disp > 0 && h_disp > 0)
-            {
-                imlib_draw_rectangle(&dstImg,
-                                     x_disp,
-                                     y_disp,
-                                     w_disp,
-                                     h_disp,
-                                     COLOR_R5_G6_B5_TO_RGB565(0, 63, 0), // Clean Green Box
-                                     2,
-                                     false);
-            }
-        }
-
-        DrawStatusOverlay(&dstImg, currentFPS, personCount);
-#endif /* USE_CCAP_CAMERA */
         uint64_t t_end_render = pmu_get_systick_Count();
         sumRenderPrep += (t_end_render - t_start_render);
 
@@ -969,123 +645,11 @@ static void vInferenceTask(void *pvParameters)
             }
         }
 #endif
-#if !USE_CCAP_CAMERA
-        taskENTER_CRITICAL();
-        if (g_processingFrameBufferIndex == frameBufferIndex)
-        {
-            g_processingFrameBufferIndex = -1;
-        }
-        taskEXIT_CRITICAL();
-#endif /* !USE_CCAP_CAMERA */
+
     }
 }
 
-#if !USE_CCAP_CAMERA
-/* LwIP TCP/IP stack thread task (UDP server path only) */
-static void vNetworkInitTask(void *pvParameters)
-{
-    (void)pvParameters;
-    ip_addr_t ipaddr, netmask, gw;
-    struct netif *netifResult;
 
-#if defined(__EBI_LCD_PANEL__)
-    // Display_Init() eventually calls Display_Delay(), which waits on the
-    // PMU/SysTick-derived counter updated from the FreeRTOS tick hook. Keep LCD
-    // initialization inside a task, after vTaskStartScheduler() has started.
-    // Calling Display_Init() from main() before task creation/scheduler start can
-    // hang forever in Display_Delay() because the counter may not advance yet.
-    //
-    // The first draw happens before network setup so the LCD is useful even when
-    // no UDP feed is present. The IP-specific redraw below must remain after lwIP
-    // assigns/configures g_netif.ip_addr.
-    LOG_INFO("Initializing LCD panel...");
-    Display_Init();
-    LOG_INFO("LCD panel initialization returned. Drawing status screen...");
-    DrawStatusScreen(0, 0);
-    LOG_INFO("LCD status screen drawn.");
-#endif
-
-#if LWIP_DHCP_ENABLE
-    IP4_ADDR(&gw, 0, 0, 0, 0);
-    IP4_ADDR(&ipaddr, 0, 0, 0, 0);
-    IP4_ADDR(&netmask, 0, 0, 0, 0);
-#else
-    ipaddr_aton(STATIC_IP_ADDR, &ipaddr);
-    ipaddr_aton(STATIC_NETMASK, &netmask);
-    ipaddr_aton(STATIC_GATEWAY, &gw);
-#endif
-
-    // Initialize TCP/IP core stack
-    LOG_INFO("Initializing LwIP TCP/IP core stack...");
-    LOG_INFO("FreeRTOS heap before tcpip_init: %u bytes.", (unsigned int)xPortGetFreeHeapSize());
-    tcpip_init(NULL, NULL);
-    LOG_INFO("LwIP TCP/IP core stack initialized successfully.");
-    LOG_INFO("FreeRTOS heap after tcpip_init: %u bytes.", (unsigned int)xPortGetFreeHeapSize());
-
-    // Register our Ethernet MAC (EMAC0) driver into LwIP netif
-    LOG_INFO("Registering Ethernet MAC driver (EMAC0) to LwIP...");
-    netifResult = netif_add(&g_netif, &ipaddr, &netmask, &gw, NULL, ethernetif_init, tcpip_input);
-    if (netifResult == NULL)
-    {
-        LOG_ERROR("netif_add failed while registering EMAC0. FreeRTOS heap remaining: %u bytes.",
-                  (unsigned int)xPortGetFreeHeapSize());
-        vTaskDelete(NULL);
-        return;
-    }
-    LOG_INFO("netif_add returned successfully. FreeRTOS heap remaining: %u bytes.",
-             (unsigned int)xPortGetFreeHeapSize());
-    LOG_INFO("Setting EMAC0 as the default LwIP interface...");
-    netif_set_default(&g_netif);
-    LOG_INFO("Bringing EMAC0 interface UP...");
-    netif_set_up(&g_netif);
-    LOG_INFO("Ethernet interface registered and brought UP successfully.");
-
-#if LWIP_DHCP_ENABLE
-    LOG_INFO("Requesting IP address via DHCP...");
-    if (dhcp_start(&g_netif) == ERR_OK)
-    {
-        while (dhcp_supplied_address(&g_netif) == 0)
-        {
-            vTaskDelay(pdMS_TO_TICKS(500));
-        }
-    }
-    else
-    {
-        LOG_ERROR("DHCP starting failed!");
-        while (1);
-    }
-#endif
-
-    LOG_INFO("Network interface successfully configured:");
-    LOG_INFO("  IP address:      %s", ip4addr_ntoa(&g_netif.ip_addr));
-    LOG_INFO("  Subnet mask:     %s", ip4addr_ntoa(&g_netif.netmask));
-    LOG_INFO("  Default gateway: %s", ip4addr_ntoa(&g_netif.gw));
-
-#if defined(__EBI_LCD_PANEL__)
-    // Redraw the status screen after the network address is known. This is the
-    // no-feed discovery path: users can read the device IP even before sending a
-    // UDP video stream. Keep this after DHCP/static netif configuration and before
-    // the NetInit task suspends.
-    taskENTER_CRITICAL();
-    ipaddr_ntoa_r(&g_netif.ip_addr, g_deviceIpAddress, sizeof(g_deviceIpAddress));
-    taskEXIT_CRITICAL();
-    DrawStatusScreen(0, 0);
-#endif
-
-    LOG_INFO("Registering raw UDP video receiver callback...");
-    if (tcpip_callback(UdpVideoInitCallback, NULL) != ERR_OK)
-    {
-        LOG_ERROR("Failed to schedule raw UDP receiver initialization.");
-        vTaskDelete(NULL);
-        return;
-    }
-
-    LOG_INFO("Network initialization complete.");
-    LOG_INFO("NetInit stack high water mark: %u words remaining.", (unsigned int)uxTaskGetStackHighWaterMark(NULL));
-    LOG_INFO("Suspending NetInit task.");
-    vTaskSuspend(NULL);
-}
-#endif /* !USE_CCAP_CAMERA */
 
 int main(void)
 {
@@ -1154,26 +718,9 @@ int main(void)
     omv_init();
     LOG_INFO("OpenMV frame buffer memory allocator initialized successfully.");
 
-#if USE_CCAP_CAMERA
     LOG_INFO("----------------------------------------------------------------");
     LOG_INFO("    Starting M55M1 CCAP Camera People Counting Firmware    ");
     LOG_INFO("----------------------------------------------------------------");
-#else
-    LOG_INFO("----------------------------------------------------------------");
-    LOG_INFO("    Starting M55M1 UDP Server People Counting Firmware     ");
-    LOG_INFO("----------------------------------------------------------------");
-#endif
-
-#if !USE_CCAP_CAMERA
-    // Create NetworkInit task only in UDP server mode
-    LOG_INFO("Spawning NetworkInit FreeRTOS task (Stack: 2048 words, Priority: %lu)...", (unsigned long)(tskIDLE_PRIORITY + 4UL));
-    if (xTaskCreate(vNetworkInitTask, "NetInit", 2048, NULL, tskIDLE_PRIORITY + 4UL, NULL) != pdPASS)
-    {
-        LOG_ERROR("Failed to create NetworkInit task. FreeRTOS heap remaining: %u bytes.",
-                  (unsigned int)xPortGetFreeHeapSize());
-        while (1);
-    }
-#endif /* !USE_CCAP_CAMERA */
 
 #if defined(__EBI_LCD_PANEL__)
     LOG_INFO("Spawning LCD Display FreeRTOS task (Stack: 1024 words, Priority: %lu)...", (unsigned long)(tskIDLE_PRIORITY + 3UL));

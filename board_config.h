@@ -24,14 +24,9 @@
 #endif
 
 /* --- CAMERA SOURCE CONFIGURATION ---
- * Set USE_CCAP_CAMERA to 1 to source frames from the onboard HM1055 camera
- * via the CCAP connector.
- *
- * Set USE_CCAP_CAMERA to 0 to revert to a UDP network video feed.
- * A host PC must run stream_udp.py (or stream_udp_picam.py) to push RGB888
- * frames to UDP_STREAM_PORT on this device.
+ * Sourced from the onboard HM1055 camera via the CCAP connector.
  */
-#define USE_CCAP_CAMERA                1   // Toggle 1=CCAP onboard camera, 0=UDP network feed
+#define USE_CCAP_CAMERA                1
 
 /* --- SYSTEM LOGGING CONFIGURATION --- */
 #define ENABLE_SERIAL_LOGS         1   // Toggle 1/0 to enable/disable serial logging
@@ -46,20 +41,7 @@
     #define LOG_ERROR(fmt, ...)  do {} while(0)
 #endif
 
-/* --- NETWORK CONFIGURATION --- */
-#define LWIP_DHCP_ENABLE           1   // Set 1 for DHCP, 0 for static IP configuration
 
-#if !LWIP_DHCP_ENABLE
-    #define STATIC_IP_ADDR         "192.168.0.50"
-    #define STATIC_NETMASK         "255.255.255.0"
-    #define STATIC_GATEWAY         "192.168.0.1"
-#endif
-
-#define BOARD_MAC_ADDR             {0x00, 0x00, 0x24, 0xD4, 0x10, 0x30}
-
-/* --- UDP VIDEO STREAM PROTOCOL CONFIGURATION --- */
-#define UDP_STREAM_PORT            5005
-#define UDP_MAGIC_HEADER           0x46524D45   // "FRME" in hex
 
 /* Image size matching model input size */
 #define IMAGE_WIDTH                192
