@@ -8,13 +8,9 @@ YOLOv8n runs 21FPS at 640x480 centered. Sends people counts to dashboard over Wi
 
 ## Usage
 
-Install necessary libraries:
-
-```bash
-git clone https://github.com/OpenNuvoton/M55M1BSP
-```
-
 Load `MODEL.TFL` into the root of the SD card.
+
+Flash with Keil.
 
 Start the web server:
 
