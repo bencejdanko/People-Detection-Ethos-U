@@ -4,27 +4,22 @@ Uses YOLOv8n to conduct people counting, and pushes results to an HTTP server ov
 
 <img width="620" height="311" alt="image" src="https://github.com/user-attachments/assets/ebb78be8-2804-4c2b-ab90-8e01cee6e337" />
 
-YOLOv8n runs 20FPS at 640x480 centered. Sends people counts to dashboard over Wi-Fi connection.
+YOLOv8n runs 21FPS at 640x480 centered. Sends people counts to dashboard over Wi-Fi connection.
 
 ## Usage
 
 Install necessary libraries:
 
 ```bash
-git clone https://github.com/OpenNuvoton/ML_M55M1_SampleCode
-
 git clone https://github.com/OpenNuvoton/M55M1BSP
 ```
 
 Load `MODEL.TFL` into the root of the SD card.
 
-Start the web server, and make sure it is accessible under config in `board_config.h`.
+Start the web server:
 
 ```bash
 python web_server.py
 ```
 
-## Additional Resources
-
-* [NuMaker-X-M55M1D User Manual](https://www.nuvoton.com/export/resource-files/en-us--UM_NuMaker-X-M55M1D_EN_Rev1.01.pdf)
-* [Nuvoton NuMicro ICP Programming Tool](https://www.nuvoton.com/tool-and-software/debugger-and-programmer/1-to-1-debugger-and-programmer/nu-link2-pro/?index=4)
+Ensure `SERVER_HOST` in `board_config.h` is set to the correct IP address that correlates with the IP address of the host running the web server.
