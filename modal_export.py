@@ -341,7 +341,13 @@ def run_train(data_yaml: str, imgsz: int, epochs: int) -> bytes:
     with open(best_weights_path, "rb") as f:
         return f.read()
 
-@app.function(image=image, timeout=1200)
+@app.function(
+    image=image,
+    timeout=1200,
+    volumes={
+        "/dataset_cache": dataset_volume
+    }
+)
 def run_export(pt_bytes: bytes, calib_npy_bytes: bytes, imgsz: int, optimise_option: str) -> bytes:
     import os
     import subprocess
@@ -351,9 +357,69 @@ def run_export(pt_bytes: bytes, calib_npy_bytes: bytes, imgsz: int, optimise_opt
     with open("best.pt", "wb") as f:
         f.write(pt_bytes)
         
-    # Save the calibration data
-    with open("calib_data.npy", "wb") as f:
-        f.write(calib_npy_bytes)
+    # Set up calibration data
+    calib_data = None
+    if calib_npy_bytes is not None:
+        import io
+        bio = io.BytesIO(calib_npy_bytes)
+        calib_data = np.load(bio)
+        print(f"Using uploaded local calibration data (shape: {calib_data.shape})")
+    else:
+        # Fetch the lightweight coco128 dataset (~21MB) for calibration data
+        cached_zip = "/dataset_cache/coco128.zip"
+        if not os.path.exists(cached_zip):
+            print("Downloading coco128.zip for calibration data...")
+            import requests
+            try:
+                r = requests.get("https://ultralytics.com/assets/coco128.zip", stream=True)
+                r.raise_for_status()
+                with open(cached_zip, "wb") as f:
+                    for chunk in r.iter_content(chunk_size=1024*1024):
+                        f.write(chunk)
+                try:
+                    dataset_volume.commit()
+                except Exception as ve:
+                    print(f"Warning: Failed to commit volume cache: {ve}")
+            except Exception as de:
+                print(f"Warning: Failed to download coco128.zip: {de}")
+                
+        if os.path.exists(cached_zip):
+            import zipfile
+            import cv2
+            import random
+            print(f"Extracting calibration images from: {cached_zip}")
+            try:
+                calib_images = []
+                with zipfile.ZipFile(cached_zip, 'r') as zip_ref:
+                    # Find image files
+                    img_files = [f for f in zip_ref.namelist() if f.lower().endswith('.jpg')]
+                    random.seed(42)
+                    random.shuffle(img_files)
+                    selected_files = img_files[:100]  # Use 100 validation images for calibration
+                    for f_name in selected_files:
+                        with zip_ref.open(f_name) as f:
+                            file_bytes = f.read()
+                            nparr = np.frombuffer(file_bytes, np.uint8)
+                            img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+                            if img is not None:
+                                img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                                img = cv2.resize(img, (imgsz, imgsz))
+                                img = img.astype(np.float32) / 255.0
+                                calib_images.append(img)
+                if calib_images:
+                     calib_data = np.stack(calib_images, axis=0)
+                     print(f"Successfully extracted {calib_data.shape[0]} representative images for calibration.")
+            except Exception as e:
+                 print(f"Warning: Failed to extract images from coco128.zip: {e}")
+                 
+        if calib_data is None:
+            raise ValueError(
+                "Error: Calibration dataset not found or failed to load! "
+                "Representative images are required for INT8 quantization. "
+                "Please ensure internet connectivity or specify a valid local '--calib-dir' folder containing images."
+            )
+            
+    np.save("calib_data.npy", calib_data)
         
     # 1. Export PyTorch model to ONNX using custom Ultralytics
     # This runs the export step, yielding best.onnx
@@ -509,12 +575,7 @@ def main(pt_path: str = None, train: bool = False, epochs: int = 10, data: str =
             print("Falling back to random dummy calibration data.")
             
     if calib_npy_bytes is None:
-        # Fallback to random dummy data so compilation works out-of-the-box
-        print("Generating random dummy calibration data (200 samples) for compilation testing...")
-        dummy_data = np.random.rand(200, imgsz, imgsz, 3).astype(np.float32)
-        bio = io.BytesIO()
-        np.save(bio, dummy_data)
-        calib_npy_bytes = bio.getvalue()
+        print("No local calibration directory specified or generation failed. Compilation will automatically use remote dataset validation images.")
         
     print("Triggering remote Modal export and compilation run...")
     compiled_bytes = run_export.remote(pt_bytes, calib_npy_bytes, imgsz, optimise)
