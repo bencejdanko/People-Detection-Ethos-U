@@ -23,3 +23,10 @@ python web_server.py
 ```
 
 Ensure `SERVER_HOST` in `board_config.h` is set to the correct IP address that correlates with the IP address of the host running the web server.
+
+## Developer 
+
+```powershell
+# helper script to reset git state
+git fetch --all; git reset --hard '@{u}'; git clean -fdx -e M55M1BSP/; Push-Location M55M1BSP; git reset --hard; git clean -fdx; Pop-Location
+```
