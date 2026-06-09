@@ -34,7 +34,7 @@ namespace model
 #define YOLOV8N_OD_STRIDE16_BOX_TENSOR_INDEX         (1)     // [1, 144, 64]
 #define YOLOV8N_OD_STRIDE32_BOX_TENSOR_INDEX         (5)     // [1, 36, 64]
 
-#define YOLOV8N_OD_CLASS       (80)     // COCO 80 classes
+#define YOLOV8N_OD_CLASS       (1)     // Person-only class
 
 struct Detection
 {
