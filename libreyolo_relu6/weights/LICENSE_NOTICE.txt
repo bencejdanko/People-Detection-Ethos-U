@@ -1,0 +1,40 @@
+NOTICE: WEIGHTS LICENSING
+
+No pretrained weight files are distributed in this directory or anywhere
+else in the source tree. The conversion scripts in this directory are
+part of the LibreYOLO source repository and are covered by the root
+MIT License.
+
+Pretrained LibreYOLO weights are published separately on Hugging Face
+under the LibreYOLO organization:
+
+    https://huggingface.co/LibreYOLO
+
+Each Hugging Face model repository ships its own LICENSE, NOTICE (where
+applicable), and attribution reflecting the license of the upstream
+project the weights were derived from. Per-family summary:
+
+    YOLOX    (LibreYOLOX{n,t,s,m,l,x})                 Apache-2.0
+             upstream: Megvii-BaseDetection/YOLOX
+
+    YOLO9    (LibreYOLO9{t,s,m,c})                     MIT
+             upstream: MultimediaTechLab/YOLO
+
+    RF-DETR  (LibreRFDETR{n,s,m,l})                    Apache-2.0
+             upstream: roboflow/rf-detr
+             (backbone: facebookresearch/dinov2, Apache-2.0)
+
+    RT-DETR  (LibreRTDETR{r18,r34,r50,r50m,r101})      Apache-2.0
+             upstream: lyuwenyu/RT-DETR
+             (backbone: PaddlePaddle/PaddleClas ResNet_vd, Apache-2.0)
+
+The LICENSE and NOTICE files on each Hugging Face model card are the
+authoritative source for redistribution terms. Users converting
+third-party checkpoints locally are responsible for complying with the
+upstream license of those checkpoints.
+
+Third-party SOURCE CODE bundled inside the LibreYOLO Python package
+(separate from weights) is disclosed in the top-level NOTICE file.
+Notably, the DEIMv2 family bundles DINOv3 backbone code under Meta's
+non-OSI DINOv3 License Agreement; see NOTICE and
+libreyolo/models/deimv2/engine/backbone/dinov3/LICENSE.md.
