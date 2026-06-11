@@ -8,9 +8,17 @@ YOLOv8n, with Relu6 activations and INT8 quantization with 192x192 normalized im
 
 ## Usage
 
-Load `MODEL.TFL` into the root of the SD card.
+### Firmware 
+
+Select one of the models available in `TFL/` to load to your SD card.Make sure it is renamed and saved as `MODEL.TFL` on the card.
+
+Make sure you add in your Wi-Fi / Hotspot SSID and password details into `board_config.h`.
 
 Flash with Keil.
+
+### Web server
+
+If the NuMaker successfully connects to the network, it automatically starts pushing counts to the web server address configured in `board_config.h`.
 
 Start the web server:
 
@@ -24,9 +32,9 @@ Ensure `SERVER_HOST` in `board_config.h` is set to the correct IP address that c
 
 Trained exclusively for people detection. Uses a subset of coco2017 filtered for person images, plus about 10% background images. 70526 images total, dataset located at `bdanko/coco2017-90person-10background` on huggingface.
 
-## Developer 
+## Developer notes
 
 ```powershell
-# helper script to reset git state
-git fetch --all; git reset --hard '@{u}'; git clean -fdx -e M55M1BSP/; Push-Location M55M1BSP; git reset --hard; git clean -fdx; Pop-Location
+# helper script to reset git state after Keil builds
+git fetch --all; git reset --hard '@{u}'; git clean -fdx;
 ```

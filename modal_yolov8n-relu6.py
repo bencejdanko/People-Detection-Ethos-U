@@ -364,7 +364,7 @@ def main(
     train: bool = False,
     epochs: int = 10,
     data: str = "coco8.yaml",
-    save_pt: str = "best_relu6.pt",
+    save_pt: str = "best_yolov8n_relu6.pt",
     calib_dir: str = None,
     imgsz: int = 192,
     optimise: str = "Size",
