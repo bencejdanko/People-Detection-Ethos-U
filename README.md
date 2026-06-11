@@ -38,3 +38,9 @@ Trained exclusively for people detection. Uses a subset of coco2017 filtered for
 # helper script to reset git state after Keil builds
 git fetch --all; git reset --hard '@{u}'; git clean -fdx;
 ```
+
+# Licensing
+
+`YOLOV8N.TFL` and the `ML_YOLO` library used to train it are licensed under the GNU Affero General Public License v3.0. See `ML_YOLO/LICENSE.txt` for the full license text.
+
+The rest of the code is licensed under Apache 2.0 License, including `LIBREYOLO9T.TFL` and the `libreyolo_relu6/` training library.
