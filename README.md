@@ -20,6 +20,10 @@ python web_server.py
 
 Ensure `SERVER_HOST` in `board_config.h` is set to the correct IP address that correlates with the IP address of the host running the web server.
 
+## Training
+
+Trained exclusively for people detection. Uses a subset of coco2017 filtered for person images, plus about 10% background images. 70526 images total, dataset located at `bdanko/coco2017-90person-10background` on huggingface.
+
 ## Developer 
 
 ```powershell

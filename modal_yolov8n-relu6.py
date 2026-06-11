@@ -368,7 +368,7 @@ def main(
     calib_dir: str = None,
     imgsz: int = 192,
     optimise: str = "Size",
-    output_path: str = "MODEL.TFL",
+    output_path: str = "YOLOV8N.TFL",
 ):
     import numpy as np
 

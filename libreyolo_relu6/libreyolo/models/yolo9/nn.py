@@ -424,7 +424,7 @@ class DFL(nn.Module):
         self.c1 = c1
         self.register_buffer(
             "project",
-            torch.arange(c1, dtype=torch.float32).view(1, 1, c1, 1),
+            torch.arange(c1, dtype=torch.float32),
             persistent=False,
         )
 
@@ -451,10 +451,13 @@ class DFL(nn.Module):
 
     def forward(self, x):
         batch, _, anchors = x.shape
-        logits = x.reshape(batch, 4, self.c1, anchors)
-        weights = logits.softmax(dim=2)
+        x_perm = x.permute(0, 2, 1)  # shape (batch, anchors, 64)
+        x_reshaped = x_perm.reshape(batch, anchors * 4, self.c1)
+        weights = x_reshaped.softmax(dim=-1)
         project = self.project.to(dtype=x.dtype)
-        return (weights * project).sum(dim=2)
+        out = (weights * project).sum(dim=-1)
+        out = out.reshape(batch, anchors, 4)
+        return out.permute(0, 2, 1)
 
 
 class MaskProto(nn.Module):
@@ -482,6 +485,7 @@ class DDetect(nn.Module):
 
     dynamic = False
     export = False
+    separate_outputs = False
     shape = None
     anchors = torch.empty(0)
     strides = torch.empty(0)
@@ -599,6 +603,16 @@ class DDetect(nn.Module):
         """
         shape = x[0].shape  # BCHW
 
+        if self.separate_outputs and self.export:
+            boxes = []
+            probs = []
+            for i in range(self.nl):
+                a = self.cv2[i](x[i])
+                b = self.cv3[i](x[i])
+                boxes.append(a)
+                probs.append(b)
+            return [torch.permute(t, (0, 2, 3, 1)).reshape(t.shape[0], -1, t.shape[1]) for t in boxes + probs]
+
         for i in range(self.nl):
             x[i] = torch.cat((self.cv2[i](x[i]), self.cv3[i](x[i])), 1)
 
@@ -635,7 +649,7 @@ class DDetect(nn.Module):
 
         # DFL decoding
         dbox = (
-            self._decode_bboxes(self.dfl(box), anchors.unsqueeze(0)) * strides
+            self._decode_bboxes(self.dfl(box), anchors.unsqueeze(0)) * strides.unsqueeze(1)
         )
 
         y = torch.cat((dbox, cls.sigmoid()), 1)
@@ -1475,6 +1489,9 @@ class LibreYOLO9Model(nn.Module):
             return output
 
         # Inference mode
+        if self.head.export and getattr(self.head, "separate_outputs", False):
+            return output
+
         if self.segmentation:
             if self.head.export:
                 return output

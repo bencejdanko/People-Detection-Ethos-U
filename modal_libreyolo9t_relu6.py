@@ -52,6 +52,7 @@ image = (
     # Install our ReLU6-patched LibreYOLO fork
     .add_local_dir("libreyolo_relu6", "/libreyolo_relu6", copy=True)
     .run_commands("pip install -e /libreyolo_relu6")
+    .run_commands("pip install --force-reinstall numpy==1.23.5")
 )
 
 # Shared calibration-data cache (coco128.zip)
@@ -143,6 +144,14 @@ def run_train(imgsz: int, epochs: int) -> bytes:
     best_ckpt     = f"{project_dir}/train/weights/best.pt"
     last_ckpt     = f"{project_dir}/train/weights/last.pt"
 
+    class VolumeCommitCallback:
+        def on_train_epoch_end(self, event):
+            print(f"Epoch {event.epoch} done — committing runs volume...")
+            try:
+                runs_volume.commit()
+            except Exception as e:
+                print(f"Warning: volume commit failed: {e}")
+
     if os.path.exists(last_ckpt):
         print(f"Resuming from {last_ckpt}")
         model = LibreYOLO(last_ckpt, size="t")
@@ -165,6 +174,7 @@ def run_train(imgsz: int, epochs: int) -> bytes:
         name="train",
         exist_ok=True,
         resume=resume,
+        callbacks=[VolumeCommitCallback()],
         # pretrained=True would re-download LibreYOLO9t; we pass the path
         # explicitly via the loaded model above, so omit it here.
     )
@@ -172,11 +182,22 @@ def run_train(imgsz: int, epochs: int) -> bytes:
     # Locate best checkpoint from results dict or fallback path
     ckpt = (results or {}).get("best_checkpoint") or best_ckpt
     if not os.path.exists(str(ckpt)):
-        import glob
-        matches = glob.glob("**/best.pt", recursive=True)
-        if not matches:
-            raise FileNotFoundError("Training finished but best.pt not found.")
-        ckpt = matches[0]
+        last_ckpt_path = (results or {}).get("last_checkpoint") or last_ckpt
+        if os.path.exists(str(last_ckpt_path)):
+            ckpt = last_ckpt_path
+            print(f"best.pt not found, falling back to last.pt: {ckpt}")
+        else:
+            import glob
+            matches = glob.glob("**/best.pt", recursive=True)
+            if matches:
+                ckpt = matches[0]
+            else:
+                matches_last = glob.glob("**/last.pt", recursive=True)
+                if matches_last:
+                    ckpt = matches_last[0]
+                    print(f"best.pt not found, falling back to found last.pt: {ckpt}")
+                else:
+                    raise FileNotFoundError("Training finished but neither best.pt nor last.pt was found.")
 
     print(f"Training complete — checkpoint: {ckpt}")
     runs_volume.commit()
@@ -276,29 +297,29 @@ def run_export(
     import torch
     from libreyolo import LibreYOLO
 
-    libreyolo_model = LibreYOLO("best.pt", size="t", nb_classes=1)
+    libreyolo_model = LibreYOLO("best.pt", size="t")
     net = libreyolo_model.model
     net.eval()
 
-    # Enable export mode on the detection head
+    # Enable export mode and separate outputs on the detection head
     if hasattr(net, "head"):
         net.head.export = True
+        net.head.separate_outputs = True
 
     dummy = torch.zeros(1, 3, imgsz, imgsz, device=libreyolo_model.device)
 
-    # Wrap to guarantee a single flat output tensor (not a tuple)
+    # Wrap to guarantee flat output tensors
     class _ExportWrapper(torch.nn.Module):
         def __init__(self, inner):
             super().__init__()
             self.inner = inner
 
         def forward(self, x):
-            out = self.inner(x)
-            # DDetect returns (predictions, raw_feats) in export mode;
-            # we only need the decoded predictions for onnx2tf → TFLite.
-            return out[0] if isinstance(out, (tuple, list)) else out
+            return self.inner(x)
 
     wrapper = _ExportWrapper(net).eval()
+
+    output_names = ["output0", "output1", "output2", "output3", "output4", "output5"]
 
     torch.onnx.export(
         wrapper,
@@ -306,8 +327,8 @@ def run_export(
         "best.onnx",
         opset_version=12,
         input_names=["images"],
-        output_names=["output0"],
-        dynamic_axes={"images": {0: "batch"}, "output0": {0: "batch"}},
+        output_names=output_names,
+        dynamic_axes=None,
     )
 
     if not os.path.exists("best.onnx"):
@@ -350,6 +371,7 @@ def run_export(
             ["images", "calib_data.npy", [[[[0, 0, 0]]]], [[[[1, 1, 1]]]]]
         ],
         input_output_quant_dtype="int8",
+        disable_group_convolution=True,
     )
 
     tflite_path = "best_full_integer_quant.tflite"
@@ -418,7 +440,7 @@ def main(
     calib_dir: str = None,
     imgsz: int = 192,
     optimise: str = "Size",
-    output_path: str = "MODEL_LIBREYOLO9T.TFL",
+    output_path: str = "LIBREYOLO9T.TFL",
 ):
     import numpy as np
 

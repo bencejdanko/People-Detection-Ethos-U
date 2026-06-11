@@ -82,7 +82,7 @@ class YOLO9E2EDetect(DDetect):
         x_cat = torch.cat([xi.view(shape[0], self.no, -1) for xi in x], 2)
         box, cls = x_cat.split((self.reg_max * 4, self.nc), 1)
         dbox = (
-            self._decode_bboxes(self.dfl(box), self.anchors.unsqueeze(0)) * self.strides
+            self._decode_bboxes(self.dfl(box), self.anchors.unsqueeze(0)) * self.strides.unsqueeze(1)
         )
         y = torch.cat((dbox, cls.sigmoid()), 1)
         return y, x
