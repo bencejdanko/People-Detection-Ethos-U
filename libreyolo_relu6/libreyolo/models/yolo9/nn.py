@@ -611,7 +611,15 @@ class DDetect(nn.Module):
                 b = self.cv3[i](x[i])
                 boxes.append(a)
                 probs.append(b)
-            return [torch.permute(t, (0, 2, 3, 1)).reshape(t.shape[0], -1, t.shape[1]) for t in boxes + probs]
+            # Reorder tensors to match the index order expected by the C++ firmware:
+            # Index 0: stride 8 box
+            # Index 1: stride 32 confidence
+            # Index 2: stride 16 box
+            # Index 3: stride 16 confidence
+            # Index 4: stride 32 box
+            # Index 5: stride 8 confidence
+            ordered_tensors = [boxes[0], probs[2], boxes[1], probs[1], boxes[2], probs[0]]
+            return [torch.permute(t, (0, 2, 3, 1)).reshape(t.shape[0], -1, t.shape[1]) for t in ordered_tensors]
 
         for i in range(self.nl):
             x[i] = torch.cat((self.cv2[i](x[i]), self.cv3[i](x[i])), 1)
