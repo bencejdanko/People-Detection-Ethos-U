@@ -174,6 +174,9 @@ def run_train(imgsz: int, epochs: int) -> bytes:
         name="train",
         exist_ok=True,
         resume=resume,
+        save_period=1,
+        eval_interval=1,
+        scheduler="cos",
         callbacks=[VolumeCommitCallback()],
         # pretrained=True would re-download LibreYOLO9t; we pass the path
         # explicitly via the loaded model above, so omit it here.

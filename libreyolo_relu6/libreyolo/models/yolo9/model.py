@@ -481,7 +481,12 @@ class LibreYOLO9(BaseModel):
         for seq in detect.cv3:
             old_final = seq[-1]
             in_channels = old_final.weight.shape[1]
-            seq[-1] = nn.Conv2d(in_channels, new_nc, 1)
+            new_conv = nn.Conv2d(in_channels, new_nc, 1)
+            if old_final.weight.shape[0] >= new_nc:
+                with torch.no_grad():
+                    new_conv.weight.copy_(old_final.weight[:new_nc])
+                    new_conv.bias.copy_(old_final.bias[:new_nc])
+            seq[-1] = new_conv
 
         detect._init_bias()
         detect._loss_fn = None
