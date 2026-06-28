@@ -1,10 +1,29 @@
 # Edge AI Overhead People Counting with the NuMaker-X-M55M1D
 
-Uses YOLOv8n to conduct people counting, and pushes results to an HTTP server over Wifi.
+Uses YOLO architecture for people counting, and pushes results to an HTTP server over Wifi.
+
+This firmware supports:
+
+- YOLOv8n-ReLU6-INT8 (APGL 3.0 Ultralytics)
+- YOLOv9t-ReLU6-INT8 (MIT LibreYOLO)
 
 <img width="620" height="311" alt="image" src="https://github.com/user-attachments/assets/ebb78be8-2804-4c2b-ab90-8e01cee6e337" />
 
-YOLOv8n, with Relu6 activations and INT8 quantization with 192x192 normalized image input. 25FPS at 640x480 centered rendered to the LCD screen. Sends people counts to dashboard over Wi-Fi connection.
+
+```text
+# Please place one of the TFL weights in the firmware SD
+# card as `MODEL.TFL`
+├── weights/                            # pretrained weights
+│   ├── pytorch/                        # pytorch checkpoints
+│   │   ├── best_libreyolo9t_relu6.pt   
+│   │   ├── best_yolov8n_relu6.pt       
+│   ├── TFL/                            # tflite conversions
+│   │   ├── LIBREYOLO9T.TFL             
+│   │   ├── YOLOV8N.TFL                 
+├── modal_libreyolo9t_relu6.py          # yolo9t training script 
+                                        # (requires `modal` cli installation)
+├── modal_yolov8n_relu6.py              # yolov8n training script
+```
 
 ## Usage
 
@@ -30,7 +49,9 @@ Ensure `SERVER_HOST` in `board_config.h` is set to the correct IP address that c
 
 ## Training
 
-Trained exclusively for people detection. Uses a subset of coco2017 filtered for person images, plus about 10% background images. 70526 images total, dataset located at `bdanko/coco2017-90person-10background` on huggingface.
+The YOLO heads have been replaced with 1 class target, for people detection. Uses a subset of coco2017 filtered for person images, plus about 10% background images. 70526 images total, dataset located at `bdanko/coco2017-90person-10background` on Huggingface.
+
+Additional data preparation scripts can be found in `open-images-v7-people/`, using `fiftyone` in order to download and filter for only annotated persons classes. ~330k annotated images for persons. 
 
 ## Developer notes
 
@@ -38,6 +59,8 @@ Trained exclusively for people detection. Uses a subset of coco2017 filtered for
 # helper script to reset git state after Keil builds
 git fetch --all; git reset --hard '@{u}'; git clean -fdx;
 ```
+
+## 
 
 # Licensing
 
