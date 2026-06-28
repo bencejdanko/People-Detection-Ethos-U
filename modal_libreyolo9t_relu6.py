@@ -8,6 +8,70 @@ import sys
 
 import modal
 
+def replace_silu_with_relu6(module):
+    import torch.nn as nn
+    for name, child in module.named_children():
+        if isinstance(child, nn.SiLU):
+            setattr(module, name, nn.ReLU6(inplace=True))
+        else:
+            replace_silu_with_relu6(child)
+
+def patch_libreyolo_for_export(net):
+    import torch
+    import torch.nn as nn
+
+    # 1. Patch head.forward to support separate_outputs
+    if hasattr(net, "head"):
+        head = net.head
+        original_head_forward = head.forward
+
+        def patched_head_forward(x, targets=None, img_size=None):
+            if getattr(head, "separate_outputs", False) and head.export:
+                boxes = []
+                probs = []
+                for i in range(head.nl):
+                    a = head.cv2[i](x[i])
+                    b = head.cv3[i](x[i])
+                    boxes.append(a)
+                    probs.append(b)
+                return [torch.permute(t, (0, 2, 3, 1)).reshape(t.shape[0], -1, t.shape[1]) for t in boxes + probs]
+            return original_head_forward(x, targets, img_size)
+
+        head.forward = patched_head_forward
+
+    # 2. Patch net.forward to bypass output unpacking in export mode with separate_outputs
+    original_net_forward = net.forward
+
+    def patched_net_forward(x, targets=None):
+        if net.training and targets is not None:
+            return original_net_forward(x, targets)
+
+        p3, p4, p5 = net.backbone(x)
+        n3, n4, n5 = net.neck(p3, p4, p5)
+
+        # Detection head
+        output = net.head([n3, n4, n5])
+
+        if getattr(net.head, "separate_outputs", False) and net.head.export:
+            return output
+
+        if net.training:
+            return output
+
+        y, x_list = output
+        if net.head.export:
+            return y
+
+        return {
+            "predictions": y,
+            "raw_outputs": x_list,
+            "x8": {"features": n3},
+            "x16": {"features": n4},
+            "x32": {"features": n5},
+        }
+
+    net.forward = patched_net_forward
+
 # ---------------------------------------------------------------------------
 # App + image
 # ---------------------------------------------------------------------------
@@ -49,9 +113,7 @@ image = (
         "onnx2tf==1.22.3",
         "ethos-u-vela==3.10.0",
     )
-    # Install our ReLU6-patched LibreYOLO fork
-    .add_local_dir("libreyolo_relu6", "/libreyolo_relu6", copy=True)
-    .run_commands("pip install -e /libreyolo_relu6")
+    .pip_install("libreyolo")
     .run_commands("pip install --force-reinstall numpy==1.23.5")
 )
 
@@ -155,12 +217,16 @@ def run_train(imgsz: int, epochs: int) -> bytes:
     if os.path.exists(last_ckpt):
         print(f"Resuming from {last_ckpt}")
         model = LibreYOLO(last_ckpt, size="t")
+        replace_silu_with_relu6(model.model)
+        patch_libreyolo_for_export(model.model)
         resume = True
     else:
         print(f"Loading LibreYOLO9t pretrained weights ({HF_WEIGHTS_FILE})...")
         # Load 80-class pretrained model; the trainer will rebuild the head
         # to nc=1 when it reads the data YAML during training initialization.
         model = LibreYOLO(weights_path, size="t")
+        replace_silu_with_relu6(model.model)
+        patch_libreyolo_for_export(model.model)
         resume = False
 
     print(f"Starting training: imgsz={imgsz}  epochs={epochs}  resume={resume}")
@@ -301,6 +367,8 @@ def run_export(
     from libreyolo import LibreYOLO
 
     libreyolo_model = LibreYOLO("best.pt", size="t")
+    replace_silu_with_relu6(libreyolo_model.model)
+    patch_libreyolo_for_export(libreyolo_model.model)
     net = libreyolo_model.model
     net.eval()
 

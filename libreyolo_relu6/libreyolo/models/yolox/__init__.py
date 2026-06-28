@@ -1,3 +1,0 @@
-"""
-YOLOX implementation for LibreYOLO.
-"""
