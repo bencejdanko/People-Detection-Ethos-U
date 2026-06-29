@@ -1,0 +1,10 @@
+# Ultralytics YOLO 🚀, AGPL-3.0 license
+# Custom COCO person-only dataset config
+
+path: /root/datasets/coco_person
+train: images/train2017
+val: images/val2017
+
+# Classes
+names:
+  0: person
