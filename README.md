@@ -3,11 +3,18 @@
 People detection on Ethos-U NPU architecture using YOLO architecture.
 
 ```text                
-├── NuMaker-X-M55M1D/           # Firmware developed for the Nuvoton's
-                                # PCB solution. Ethos-U55.
-├── DK-E8/                      # (Coming soon) Firmware developed for 
-                                # Alif Semiconductor's PCB solution.
-                                # Ethos-U85.
+├── NuMaker-X-M55M1D/              
+    # Runs yolov8n, yolo9t and posts updates to a web dashboard
+│   ├── PeopleCountingWebDashboard/
+├── DK-E8/ 
+├── training/                               # Training scripts  
+├── weights/                                # pretrained weights
+│   ├── pytorch/                            # pytorch checkpoints
+│   │   ├── best_libreyolo9t_relu6.pt   
+│   │   ├── best_yolov8n_relu6.pt       
+│   ├── vela_flite_m55m1/                   # tflite conversions
+│   │   ├── LIBREYOLO9T.TFL             
+│   │   ├── YOLOV8N.TFL                 
 ```
 
 This repo explores the limits of Ethos-U acceleration on these models:
