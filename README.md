@@ -24,7 +24,11 @@ This repo explores the limits of Ethos-U acceleration on these models:
 
 ## Datasets
 
-- COCO-person (validation/test)
-- Sama-COCO-person
+
+| Dataset ("people" subsets) | Train | Validation | Test |
+| --- | --- | --- | --- |
+| **Sama-COCO** | 65,883 | 2,776 | N/A |
+| **COCO-2017** | 64,115 | 2,693 | N/A |
+
 - Open-Images-V7-person (validation/test)
 - Open-Images-V7-reannotated

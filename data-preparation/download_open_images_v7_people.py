@@ -10,10 +10,10 @@ dataset = foz.load_zoo_dataset(
     # we also include points annotations, in case 
     # they include images with humans that we can 
     # annotate ourselves
-    label_types=["detections", "points"],
+    label_types=["detections"],
 
     classes=human_classes,
-    only_matching=True,  # keep only 5 classes
-    dataset_dir="/home/bence/datasets/open-images-v7"
+    only_matching=True,
+    dataset_dir="/home/bence/fiftyone/open-images-v7",
 )
 
