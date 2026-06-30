@@ -17,3 +17,4 @@ dataset = foz.load_zoo_dataset(
     dataset_dir="/home/bence/fiftyone/open-images-v7",
 )
 
+# Licenses are all CC 2.0

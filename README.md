@@ -2,6 +2,8 @@
 
 People detection on Ethos-U NPU architecture using YOLO architecture.
 
+## Directory
+
 ```text                
 ├── NuMaker-X-M55M1D/              
     # Runs yolov8n, yolo9t and posts updates to a web dashboard
@@ -17,18 +19,31 @@ People detection on Ethos-U NPU architecture using YOLO architecture.
 │   │   ├── YOLOV8N.TFL                 
 ```
 
-This repo explores the limits of Ethos-U acceleration on these models:
+## Implementation
+
+### Ethos-U55
 
 - YOLOv8n-ReLU6-INT8 (APGL 3.0 Ultralytics)
 - YOLOv9t-ReLU6-INT8 (MIT LibreYOLO)
 
-## Datasets
+Todo:
+- YOLOv11n-ReLU6-INT8 (APGL 3.0 Ultralytics)
+- YOLOv26n-ReLU6-INT8 (APGL 3.0 Ultralytics)
+- YOLOv9s-ReLU6-INT8 [alpha 0.5 sparsity] (MIT LibreYOLO)
 
+### Ethos-U85 (Todo)
+
+- MobileViT
+- ViT-Tiny
+- DEiT-Tiny
+- RT-DETR
+
+## Datasets
 
 | Dataset ("people" subsets) | Train | Validation | Test |
 | --- | --- | --- | --- |
-| **Sama-COCO** | 65,883 | 2,776 | N/A |
 | **COCO-2017** | 64,115 | 2,693 | N/A |
+| **Sama-COCO** | 65,883 | 2,776 | N/A |
+| **Open-Images-V7**[1] | 834,000 | 11,620 | 36,784 |
 
-- Open-Images-V7-person (validation/test)
-- Open-Images-V7-reannotated
+[1] Covers 5 classes from the human heirarchy, and human heads
