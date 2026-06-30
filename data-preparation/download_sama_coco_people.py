@@ -5,10 +5,10 @@ sama_dataset = foz.load_zoo_dataset(
     "sama-coco",
     splits=["train", "validation", "test"],
     label_types=["detections"],
-    classes=["person"],
-    only_matching=True,
     include_license="url" 
 )
+
+######### PEOPLE SUBSET LICENSING ##########
 
 # TRAIN
 # License 1 (CC BY-NC-SA): 18,400 images

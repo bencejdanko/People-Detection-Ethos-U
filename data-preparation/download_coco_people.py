@@ -5,7 +5,5 @@ coco_dataset = foz.load_zoo_dataset(
     "coco-2017",
     splits=["train", "validation", "test"],
     label_types=["detections"],
-    classes=["person"],
-    only_matching=True,
     include_license="url" 
 )
