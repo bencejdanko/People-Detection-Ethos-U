@@ -32,7 +32,7 @@ protected:
 
 private:
     /* Maximum number of individual operations that can be enlisted for CPU/NPU. */
-    static constexpr int ms_maxOpCnt = 8;
+    static constexpr int ms_maxOpCnt = 12;
 
     /* A mutable op resolver instance. */
     tflite::MicroMutableOpResolver<ms_maxOpCnt> m_opResolver;

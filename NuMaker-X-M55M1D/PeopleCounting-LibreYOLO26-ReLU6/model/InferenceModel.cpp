@@ -58,5 +58,10 @@ bool arm::app::InferenceModel::EnlistOperations()
         return false;
     }
  
+    if (this->m_opResolver.AddBroadcastTo() != kTfLiteOk) {
+        printf_err("Failed to add BroadcastTo to op resolver\n");
+        return false;
+    }
+ 
     return true;
 }

@@ -1,0 +1,10 @@
+solution:
+  created-by: uv2csolution@1.6.0
+  created-for: CMSIS-Toolbox@2.7.0
+  compiler: AC6
+  target-types:
+    - type: ObjectDetection
+      device: M55M1H2LJAE
+      optimize: debug
+  projects:
+    - project: PeopleCounting.cproject.yml

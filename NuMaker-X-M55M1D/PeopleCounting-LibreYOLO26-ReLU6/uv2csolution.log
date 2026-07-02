@@ -1,0 +1,19 @@
+1 out of 1 target(s) converted
+
+Created solution: /home/bence/Edge-AI-People-Counting-NuMaker-X-M55M1D/NuMaker-X-M55M1D/PeopleCounting-LibreYOLO26-ReLU6/PeopleCounting.csolution.yml
+
+With projects:
+
+- /home/bence/Edge-AI-People-Counting-NuMaker-X-M55M1D/NuMaker-X-M55M1D/PeopleCounting-LibreYOLO26-ReLU6/PeopleCounting.cproject.yml
+
+Error: 0 error(s), 1 warning(s):
+
+Warnings:
+
+	The target "ObjectDetection" is configured with following user commands which should be run manually:
+
+            After Build/Rebuild
+
+                fromelf --bin ".\Objects\@L.axf" --output ".\release\@L.bin"
+
+

@@ -1,0 +1,5 @@
+CompileFlags:
+  CompilationDatabase: /home/bence/Edge-AI-People-Counting-NuMaker-X-M55M1D/NuMaker-X-M55M1D/PeopleCounting-LibreYOLO26-ReLU6/out/PeopleCounting/ObjectDetection
+  Add:
+    - -include
+    - /home/bence/Edge-AI-People-Counting-NuMaker-X-M55M1D/NuMaker-X-M55M1D/PeopleCounting-LibreYOLO26-ReLU6/out/PeopleCounting/ObjectDetection/compile_macros.h

@@ -1,0 +1,16 @@
+build-idx:
+  generated-by: csolution version 2.14.1+p9-g859cb6c9
+  csolution: PeopleCounting.csolution.yml
+  cbuild-run: out/PeopleCounting+ObjectDetection.cbuild-run.yml
+  tmpdir: tmp
+  cprojects:
+    - cproject: PeopleCounting.cproject.yml
+  cbuilds:
+    - cbuild: out/PeopleCounting/ObjectDetection/PeopleCounting+ObjectDetection.cbuild.yml
+      project: PeopleCounting
+      configuration: +ObjectDetection
+      messages:
+        info:
+          - PeopleCounting.cbuild-pack.yml - file is already up-to-date
+          - PeopleCounting+ObjectDetection.cbuild-run.yml - file is already up-to-date
+          - PeopleCounting+ObjectDetection.cbuild.yml - file is already up-to-date

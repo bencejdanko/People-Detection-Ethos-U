@@ -1,0 +1,168 @@
+project:
+  packs:
+    - pack: Nuvoton::NuMicroM55_DFP@^3.1.4-rc.3
+  setups:
+    - setup: Options for ObjectDetection
+      processor:
+        fpu: dp
+        mve: fp
+        endian: little
+        trustzone: "off"
+      add-path:
+        - M55M1BSP/Library/CMSIS/Core/Include
+        - M55M1BSP/Library/Device/Nuvoton/M55M1/Include
+        - M55M1BSP/Library/CMSIS/DSP/Include
+        - M55M1BSP/Library/StdDriver/inc
+        - M55M1BSP/Library/StdDriver/inc/npu
+        - M55M1BSP/ThirdParty/openmv/omv/imlib
+        - M55M1BSP/ThirdParty/openmv/omv/alloc
+        - M55M1BSP/ThirdParty/openmv/omv/common
+        - M55M1BSP/ThirdParty/openmv/omv/Lib
+        - M55M1BSP/ThirdParty/tflite_micro
+        - M55M1BSP/ThirdParty/tflite_micro/_deps/tensorflow-flatbuffers-src/include
+        - M55M1BSP/ThirdParty/ml-embedded-evaluation-kit/source/application/api/common/include
+        - M55M1BSP/ThirdParty/ml-embedded-evaluation-kit/source/log/include
+        - M55M1BSP/ThirdParty/ml-embedded-evaluation-kit/source/math/include
+        - M55M1BSP/ThirdParty/ml-embedded-evaluation-kit/source/application/main/include
+        - M55M1BSP/ThirdParty/ml-embedded-evaluation-kit/source/profiler/include
+        - Device/include
+        - model
+        - NPU/include
+        - ProfilerCounter/include
+        - .
+        - M55M1BSP/ThirdParty/tflite_micro/_deps/tensorflow-gemlowp-src
+        - M55M1BSP/ThirdParty/FatFs/source
+        - M55M1BSP/ThirdParty/FreeRTOS/Source/include
+        - M55M1BSP/ThirdParty/FreeRTOS/Source/portable/GCC/ARM_CM55_NTZ/non_secure
+      debug: "on"
+      define:
+        - NVT_VECTOR_ON_FLASH
+        - TF_LITE_STATIC_MEMORY
+        - ARM_MATH_DSP
+        - ARM_NPU
+        - ACTIVATION_BUF_SZ: "0x000FC000"
+      misc:
+        - C:
+            - -std=c11
+          C-CPP:
+            - -fno-rtti
+            - -funsigned-char
+            - -fshort-enums
+            - -fshort-wchar
+            - -ffunction-sections
+            - -Wno-packed
+            - -Wno-missing-variable-declarations
+            - -Wno-missing-prototypes
+            - -Wno-missing-noreturn
+            - -Wno-sign-conversion
+            - -Wno-nonportable-include-path
+            - -Wno-reserved-id-macro
+            - -Wno-unused-macros
+            - -Wno-documentation-unknown-command
+            - -Wno-documentation
+            - -Wno-license-management
+            - -Wno-parentheses-equality
+          CPP:
+            - -xc++
+            - -std=c++17
+            - -fno-exceptions
+          ASM:
+            - -masm=auto
+          Link:
+            - --map
+            - --load_addr_map_info
+            - --xref
+            - --callgraph
+            - --symbols
+            - --info sizes
+            - --info totals
+            - --info unused
+            - --info veneers
+            - --strict
+            - --diag_suppress=6314
+            - --summary_stderr
+            - --info summarysizes
+  linker:
+    - script: M55M1.scatter
+  groups:
+    - group: CMSIS
+      files:
+        - file: M55M1BSP/Library/Device/Nuvoton/M55M1/Source/startup_M55M1.c
+        - file: M55M1BSP/Library/Device/Nuvoton/M55M1/Source/system_M55M1.c
+    - group: Driver
+      files:
+        - file: M55M1BSP/Library/StdDriver/src/uart.c
+        - file: M55M1BSP/Library/StdDriver/src/retarget.c
+        - file: M55M1BSP/Library/StdDriver/src/ccap.c
+        - file: M55M1BSP/Library/StdDriver/src/clk.c
+        - file: M55M1BSP/Library/StdDriver/src/sys.c
+        - file: M55M1BSP/Library/StdDriver/src/gpio.c
+        - file: M55M1BSP/Library/StdDriver/src/npu/ethosu_device_u55_u65.c
+        - file: M55M1BSP/Library/StdDriver/src/npu/ethosu_driver.c
+        - file: M55M1BSP/Library/StdDriver/src/npu/ethosu_pmu.c
+        - file: M55M1BSP/Library/StdDriver/src/ebi.c
+        - file: M55M1BSP/Library/StdDriver/src/spim_hyper.c
+        - file: M55M1BSP/Library/StdDriver/src/sdh.c
+        - file: M55M1BSP/Library/StdDriver/src/spi.c
+        - file: M55M1BSP/Library/StdDriver/src/hsusbd.c
+        - file: M55M1BSP/Library/StdDriver/src/pdma.c
+    - group: Application
+      files:
+        - file: BoardInit.cpp
+        - file: main.cpp
+        - file: mpu_config_M55M1.h
+        - file: ModelFileReader.c
+        - file: model/PostProcessor.cpp
+    - group: Lib
+      files:
+        - file: M55M1BSP/Library/CMSIS/Lib/Keil/cmsis_dsp.lib
+        - file: M55M1BSP/ThirdParty/tflite_micro/Lib/tflu.lib
+        - file: M55M1BSP/Library/CMSIS/Lib/Keil/cmsis_nn.lib
+        - file: M55M1BSP/ThirdParty/openmv/omv/Lib/omv.lib
+    - group: Model
+      files:
+        - file: model/InferenceModel.cpp
+    - group: ArmMLApi
+      files:
+        - file: M55M1BSP/ThirdParty/ml-embedded-evaluation-kit/source/application/api/common/source/Model.cc
+        - file: M55M1BSP/ThirdParty/ml-embedded-evaluation-kit/source/application/api/common/source/TensorFlowLiteMicro.cc
+        - file: M55M1BSP/ThirdParty/ml-embedded-evaluation-kit/source/math/PlatformMath.cc
+        - file: M55M1BSP/ThirdParty/ml-embedded-evaluation-kit/source/profiler/Profiler.cc
+    - group: NPU
+      files:
+        - file: NPU/ethosu_cpu_cache.c
+        - file: NPU/ethosu_npu_init.c
+        - file: NPU/ethosu_profiler.c
+    - group: ProfilerCounter
+      files:
+        - file: ProfilerCounter/pmu_counter.c
+    - group: Device
+      files:
+        - file: Device/ImageSensor/ImageSensor.c
+        - file: Device/ImageSensor/Sensor/Sensor_HM1055.c
+        - file: Device/ImageSensor/Sensor/SWI2C.c
+        - file: Device/Display/Display.c
+        - file: Device/Display/LCD/LCD_FSA506.c
+        - file: Device/Display/Font8_16.c
+        - file: Device/HyperRAM/hyperram_code.c
+        - file: Device/SDCard/sdglue.c
+        - file: Device/Display/LCD/LCD_ILI9341.c
+        - file: Device/UVC/descriptors.c
+        - file: Device/UVC/UVC.c
+        - file: Device/Display/LCD/LCD_LT7381.c
+        - file: Device/Display/drv_pdma.c
+        - file: M55M1BSP/Library/Storage/diskio_SDH.c
+    - group: FatFS
+      files:
+        - file: M55M1BSP/ThirdParty/FatFs/source/ff.c
+        - file: M55M1BSP/ThirdParty/FatFs/source/ffunicode.c
+    - group: FreeRTOS
+      files:
+        - file: M55M1BSP/ThirdParty/FreeRTOS/Source/tasks.c
+        - file: M55M1BSP/ThirdParty/FreeRTOS/Source/queue.c
+        - file: M55M1BSP/ThirdParty/FreeRTOS/Source/list.c
+        - file: M55M1BSP/ThirdParty/FreeRTOS/Source/timers.c
+        - file: M55M1BSP/ThirdParty/FreeRTOS/Source/event_groups.c
+        - file: M55M1BSP/ThirdParty/FreeRTOS/Source/portable/GCC/ARM_CM55_NTZ/non_secure/port.c
+        - file: M55M1BSP/ThirdParty/FreeRTOS/Source/portable/GCC/ARM_CM55_NTZ/non_secure/portasm.c
+        - file: M55M1BSP/ThirdParty/FreeRTOS/Source/portable/MemMang/heap_4.c
